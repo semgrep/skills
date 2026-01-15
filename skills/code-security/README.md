@@ -117,4 +117,4 @@ When adding or modifying rules:
 
 ## Acknowledgments
 
-Originally created by [@DrewDennison](https://x.com/drewdennison) at [Semgrep](https://semgrep.dev).
+Originally created by [@DrewDennison](https://x.com/drewdennison) at [Semgrep](https://semgrep.dev). This work was heavily inspired by Vercel's [React Best Practices](https://vercel.com/blog/introducing-react-best-practices)
