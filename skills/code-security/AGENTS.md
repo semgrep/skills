@@ -87,39 +87,198 @@ SQL injection allows attackers to manipulate database queries, leading to data t
 
 ### 1.1 Prevent SQL Injection
 
-**Impact: CRITICAL (Data leakage)**
+**Impact: CRITICAL (Attackers can read, modify, or delete database data)**
 
-Never concatenate or use format strings to execute sql, always use parameterized queries.
+SQL injection allows attackers to manipulate database queries by injecting malicious SQL through user input. Never concatenate user input into SQL queries - always use parameterized queries or prepared statements.
 
-**Incorrect: vulnerable SQL - Node.js / TypeScript**
+Vulnerable patterns: String concatenation (+), format strings (.format(), %, f-strings, String.Format()), template literals with variables.
 
-```typescript
-// Vulnerable: concatenates user input directly into SQL
-import { Pool } from 'pg'
+**Incorrect: string concatenation**
+
+```python
+import psycopg2
+
+def get_user(user_input):
+    conn = psycopg2.connect("dbname=test")
+    cur = conn.cursor()
+    query = "SELECT * FROM users WHERE name = '" + user_input + "'"
+    cur.execute(query)
+```
+
+**Incorrect: format string**
+
+```python
+def get_user(user_input):
+    cur.execute("SELECT * FROM users WHERE id = {}".format(user_input))
+```
+
+**Incorrect: f-string**
+
+```python
+def get_user(user_input):
+    cur.execute(f"SELECT * FROM users WHERE id = {user_input}")
+```
+
+**Correct: parameterized query**
+
+```python
+def get_user(user_input):
+    conn = psycopg2.connect("dbname=test")
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE name = %s", [user_input])
+```
+
+**Incorrect: template literal with variable**
+
+```javascript
+const { Pool } = require('pg')
 const pool = new Pool()
 
-export async function handler(req: any, res: any) {
-  const userId = req.query.id // attacker can supply "1 OR 1=1"
-  const sql = `SELECT id, username, email FROM users WHERE id = ${userId}`
+async function getUser(userId) {
+  const sql = `SELECT * FROM users WHERE id = ${userId}`
   const { rows } = await pool.query(sql)
-  res.json(rows)
+  return rows
 }
 ```
 
-**Correct: parameterized query - Node.js / TypeScript**
+**Incorrect: string concatenation**
 
-```typescript
-// Safe: use parameterized queries to avoid SQL injection
-import { Pool } from 'pg'
-const pool = new Pool()
+```javascript
+async function getUser(userId) {
+  const sql = "SELECT * FROM users WHERE id = " + userId
+  const { rows } = await pool.query(sql)
+  return rows
+}
+```
 
-export async function handler(req: any, res: any) {
-  const userId = req.query.id
-  const sql = 'SELECT id, username, email FROM users WHERE id = $1'
+**Correct: parameterized query**
+
+```javascript
+async function getUser(userId) {
+  const sql = 'SELECT * FROM users WHERE id = $1'
   const { rows } = await pool.query(sql, [userId])
-  res.json(rows)
+  return rows
 }
 ```
+
+**Incorrect: string concatenation with Statement**
+
+```java
+public ResultSet getUser(String input) throws SQLException {
+    Statement stmt = connection.createStatement();
+    String sql = "SELECT * FROM users WHERE name = '" + input + "'";
+    return stmt.executeQuery(sql);
+}
+```
+
+**Incorrect: String.format**
+
+```java
+public ResultSet getUser(String input) throws SQLException {
+    Statement stmt = connection.createStatement();
+    return stmt.executeQuery(String.format("SELECT * FROM users WHERE name = '%s'", input));
+}
+```
+
+**Correct: PreparedStatement with parameters**
+
+```java
+public ResultSet getUser(String input) throws SQLException {
+    PreparedStatement pstmt = connection.prepareStatement(
+        "SELECT * FROM users WHERE name = ?");
+    pstmt.setString(1, input);
+    return pstmt.executeQuery();
+}
+```
+
+**Incorrect: string concatenation**
+
+```go
+func getUser(db *sql.DB, userInput string) {
+    query := "SELECT * FROM users WHERE name = '" + userInput + "'"
+    db.Query(query)
+}
+```
+
+**Incorrect: fmt.Sprintf**
+
+```go
+func getUser(db *sql.DB, email string) {
+    query := fmt.Sprintf("SELECT * FROM users WHERE email = '%s'", email)
+    db.Query(query)
+}
+```
+
+**Correct: parameterized query**
+
+```go
+func getUser(db *sql.DB, userInput string) {
+    db.Query("SELECT * FROM users WHERE name = $1", userInput)
+}
+```
+
+**Incorrect: string concatenation**
+
+```ruby
+def get_user(user_input)
+  conn = PG.connect(dbname: 'test')
+  query = "SELECT * FROM users WHERE name = '" + user_input + "'"
+  conn.exec(query)
+end
+```
+
+**Incorrect: string interpolation**
+
+```ruby
+def get_user(user_input)
+  conn = PG.connect(dbname: 'test')
+  conn.exec("SELECT * FROM users WHERE name = '#{user_input}'")
+end
+```
+
+**Correct: parameterized query**
+
+```ruby
+def get_user(user_input)
+  conn = PG.connect(dbname: 'test')
+  conn.exec_params('SELECT * FROM users WHERE name = $1', [user_input])
+end
+```
+
+**Incorrect: String.Format**
+
+```csharp
+public void GetUser(string userInput)
+{
+    SqlCommand command = connection.CreateCommand();
+    command.CommandText = String.Format(
+        "SELECT * FROM users WHERE name = '{0}'", userInput);
+}
+```
+
+**Incorrect: string concatenation**
+
+```csharp
+public void GetUser(string userInput)
+{
+    SqlCommand command = new SqlCommand(
+        "SELECT * FROM users WHERE name = '" + userInput + "'");
+}
+```
+
+**Correct: SqlParameter**
+
+```csharp
+public void GetUser(string userInput)
+{
+    string sql = "SELECT * FROM users WHERE name = @Name";
+    SqlCommand command = new SqlCommand(sql);
+    command.Parameters.Add("@Name", SqlDbType.NVarChar);
+    command.Parameters["@Name"].Value = userInput;
+}
+```
+
+**References:**
 
 ---
 

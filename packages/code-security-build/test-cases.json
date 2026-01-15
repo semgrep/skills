@@ -1883,17 +1883,153 @@
     "ruleId": "",
     "ruleTitle": "Prevent SQL Injection",
     "type": "bad",
-    "code": "// Vulnerable: concatenates user input directly into SQL\nimport { Pool } from 'pg'\nconst pool = new Pool()\n\nexport async function handler(req: any, res: any) {\n  const userId = req.query.id // attacker can supply \"1 OR 1=1\"\n  const sql = `SELECT id, username, email FROM users WHERE id = ${userId}`\n  const { rows } = await pool.query(sql)\n  res.json(rows)\n}",
-    "language": "typescript",
-    "description": "vulnerable SQL - Node.js / TypeScript"
+    "code": "import psycopg2\n\ndef get_user(user_input):\n    conn = psycopg2.connect(\"dbname=test\")\n    cur = conn.cursor()\n    query = \"SELECT * FROM users WHERE name = '\" + user_input + \"'\"\n    cur.execute(query)",
+    "language": "python",
+    "description": "string concatenation"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "def get_user(user_input):\n    cur.execute(\"SELECT * FROM users WHERE id = {}\".format(user_input))",
+    "language": "python",
+    "description": "format string"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "def get_user(user_input):\n    cur.execute(f\"SELECT * FROM users WHERE id = {user_input}\")",
+    "language": "python",
+    "description": "f-string"
   },
   {
     "ruleId": "",
     "ruleTitle": "Prevent SQL Injection",
     "type": "good",
-    "code": "// Safe: use parameterized queries to avoid SQL injection\nimport { Pool } from 'pg'\nconst pool = new Pool()\n\nexport async function handler(req: any, res: any) {\n  const userId = req.query.id\n  const sql = 'SELECT id, username, email FROM users WHERE id = $1'\n  const { rows } = await pool.query(sql, [userId])\n  res.json(rows)\n}",
-    "language": "typescript",
-    "description": "parameterized query - Node.js / TypeScript"
+    "code": "def get_user(user_input):\n    conn = psycopg2.connect(\"dbname=test\")\n    cur = conn.cursor()\n    cur.execute(\"SELECT * FROM users WHERE name = %s\", [user_input])",
+    "language": "python",
+    "description": "parameterized query"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "const { Pool } = require('pg')\nconst pool = new Pool()\n\nasync function getUser(userId) {\n  const sql = `SELECT * FROM users WHERE id = ${userId}`\n  const { rows } = await pool.query(sql)\n  return rows\n}",
+    "language": "javascript",
+    "description": "template literal with variable"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "async function getUser(userId) {\n  const sql = \"SELECT * FROM users WHERE id = \" + userId\n  const { rows } = await pool.query(sql)\n  return rows\n}",
+    "language": "javascript",
+    "description": "string concatenation"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "good",
+    "code": "async function getUser(userId) {\n  const sql = 'SELECT * FROM users WHERE id = $1'\n  const { rows } = await pool.query(sql, [userId])\n  return rows\n}",
+    "language": "javascript",
+    "description": "parameterized query"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "public ResultSet getUser(String input) throws SQLException {\n    Statement stmt = connection.createStatement();\n    String sql = \"SELECT * FROM users WHERE name = '\" + input + \"'\";\n    return stmt.executeQuery(sql);\n}",
+    "language": "java",
+    "description": "string concatenation with Statement"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "public ResultSet getUser(String input) throws SQLException {\n    Statement stmt = connection.createStatement();\n    return stmt.executeQuery(String.format(\"SELECT * FROM users WHERE name = '%s'\", input));\n}",
+    "language": "java",
+    "description": "String.format"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "good",
+    "code": "public ResultSet getUser(String input) throws SQLException {\n    PreparedStatement pstmt = connection.prepareStatement(\n        \"SELECT * FROM users WHERE name = ?\");\n    pstmt.setString(1, input);\n    return pstmt.executeQuery();\n}",
+    "language": "java",
+    "description": "PreparedStatement with parameters"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "func getUser(db *sql.DB, userInput string) {\n    query := \"SELECT * FROM users WHERE name = '\" + userInput + \"'\"\n    db.Query(query)\n}",
+    "language": "go",
+    "description": "string concatenation"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "func getUser(db *sql.DB, email string) {\n    query := fmt.Sprintf(\"SELECT * FROM users WHERE email = '%s'\", email)\n    db.Query(query)\n}",
+    "language": "go",
+    "description": "fmt.Sprintf"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "good",
+    "code": "func getUser(db *sql.DB, userInput string) {\n    db.Query(\"SELECT * FROM users WHERE name = $1\", userInput)\n}",
+    "language": "go",
+    "description": "parameterized query"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "def get_user(user_input)\n  conn = PG.connect(dbname: 'test')\n  query = \"SELECT * FROM users WHERE name = '\" + user_input + \"'\"\n  conn.exec(query)\nend",
+    "language": "ruby",
+    "description": "string concatenation"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "def get_user(user_input)\n  conn = PG.connect(dbname: 'test')\n  conn.exec(\"SELECT * FROM users WHERE name = '#{user_input}'\")\nend",
+    "language": "ruby",
+    "description": "string interpolation"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "good",
+    "code": "def get_user(user_input)\n  conn = PG.connect(dbname: 'test')\n  conn.exec_params('SELECT * FROM users WHERE name = $1', [user_input])\nend",
+    "language": "ruby",
+    "description": "parameterized query"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "public void GetUser(string userInput)\n{\n    SqlCommand command = connection.CreateCommand();\n    command.CommandText = String.Format(\n        \"SELECT * FROM users WHERE name = '{0}'\", userInput);\n}",
+    "language": "csharp",
+    "description": "String.Format"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "bad",
+    "code": "public void GetUser(string userInput)\n{\n    SqlCommand command = new SqlCommand(\n        \"SELECT * FROM users WHERE name = '\" + userInput + \"'\");\n}",
+    "language": "csharp",
+    "description": "string concatenation"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent SQL Injection",
+    "type": "good",
+    "code": "public void GetUser(string userInput)\n{\n    string sql = \"SELECT * FROM users WHERE name = @Name\";\n    SqlCommand command = new SqlCommand(sql);\n    command.Parameters.Add(\"@Name\", SqlDbType.NVarChar);\n    command.Parameters[\"@Name\"].Value = userInput;\n}",
+    "language": "csharp",
+    "description": "SqlParameter"
   },
   {
     "ruleId": "",
