@@ -1,9 +1,15 @@
 /**
- * Parser for rule markdown files
+ * AST-based parser for rule markdown files using remark/unified
  */
 
 import { readFile } from 'fs/promises'
-import { Rule, ImpactLevel } from './types.js'
+import { unified } from 'unified'
+import remarkParse from 'remark-parse'
+import remarkFrontmatter from 'remark-frontmatter'
+import { visit } from 'unist-util-visit'
+import yaml from 'js-yaml'
+import type { Root, Code, Heading, Paragraph, Strong, Text, Link } from 'mdast'
+import { Rule, ImpactLevel, CodeExample } from './types.js'
 
 export interface RuleFile {
   section: number
@@ -11,189 +17,203 @@ export interface RuleFile {
   rule: Rule
 }
 
+interface Frontmatter {
+  title?: string
+  impact?: string
+  impactDescription?: string
+  tags?: string
+  section?: number
+  explanation?: string
+  references?: string
+}
+
 /**
- * Parse a rule markdown file into a Rule object
+ * Extract text content from a paragraph or heading node
+ */
+function extractText(node: Paragraph | Heading): string {
+  let text = ''
+  for (const child of node.children) {
+    if (child.type === 'text') {
+      text += child.value
+    } else if (child.type === 'strong' || child.type === 'emphasis') {
+      text += extractText({ type: 'paragraph', children: child.children } as Paragraph)
+    } else if (child.type === 'inlineCode') {
+      text += child.value
+    } else if (child.type === 'link') {
+      text += extractText({ type: 'paragraph', children: child.children } as Paragraph)
+    }
+  }
+  return text
+}
+
+/**
+ * Check if a paragraph node is an example label (e.g., **Incorrect:** or **Correct (description):**)
+ */
+function isExampleLabel(node: Paragraph): { label: string; description?: string } | null {
+  // An example label should be a single strong element ending with colon
+  if (node.children.length !== 1 && node.children.length !== 2) {
+    // Allow for trailing whitespace text node
+    if (node.children.length === 2 && node.children[1].type === 'text') {
+      const text = (node.children[1] as Text).value.trim()
+      if (text !== '' && text !== ':') return null
+    } else {
+      return null
+    }
+  }
+
+  const firstChild = node.children[0]
+  if (firstChild.type !== 'strong') return null
+
+  const strongText = extractText({ type: 'paragraph', children: (firstChild as Strong).children } as Paragraph)
+
+  // Must end with colon (possibly with the colon outside the strong)
+  let fullText = strongText
+  if (node.children.length === 2 && node.children[1].type === 'text') {
+    fullText += (node.children[1] as Text).value
+  }
+
+  // Check if it ends with colon (allowing for trailing whitespace)
+  if (!fullText.trim().endsWith(':')) return null
+
+  // Remove trailing colon for label extraction
+  const labelText = fullText.trim().slice(0, -1).trim()
+
+  // Try to extract description from parentheses
+  const descMatch = labelText.match(/^([A-Za-z]+(?:\s+[A-Za-z]+)*)\s*\(([^()]+)\)$/)
+  if (descMatch) {
+    return {
+      label: descMatch[1].trim(),
+      description: descMatch[2].trim()
+    }
+  }
+
+  return { label: labelText }
+}
+
+/**
+ * Check if a paragraph contains reference links
+ */
+function isReferenceLine(node: Paragraph): string[] | null {
+  const text = extractText(node)
+  if (!text.startsWith('**References:**') && !text.startsWith('References:') && !text.startsWith('Reference:')) {
+    return null
+  }
+
+  const refs: string[] = []
+  visit(node, 'link', (linkNode: Link) => {
+    refs.push(linkNode.url)
+  })
+
+  return refs.length > 0 ? refs : null
+}
+
+/**
+ * Parse a rule markdown file into a Rule object using AST
  */
 export async function parseRuleFile(filePath: string): Promise<RuleFile> {
   const content = await readFile(filePath, 'utf-8')
-  const lines = content.split('\n')
 
-  // Extract frontmatter if present
-  let frontmatter: Record<string, any> = {}
-  let contentStart = 0
+  // Parse markdown with frontmatter support
+  const processor = unified()
+    .use(remarkParse)
+    .use(remarkFrontmatter, ['yaml'])
 
-  if (content.startsWith('---')) {
-    const frontmatterEnd = content.indexOf('---', 3)
-    if (frontmatterEnd !== -1) {
-      const frontmatterText = content.slice(3, frontmatterEnd).trim()
-      frontmatterText.split('\n').forEach((line) => {
-        const [key, ...valueParts] = line.split(':')
-        if (key && valueParts.length) {
-          const value = valueParts.join(':').trim()
-          frontmatter[key.trim()] = value.replace(/^["']|["']$/g, '')
-        }
-      })
-      contentStart = frontmatterEnd + 3
+  const tree = processor.parse(content) as Root
+
+  // Extract frontmatter
+  let frontmatter: Frontmatter = {}
+  visit(tree, 'yaml', (node) => {
+    try {
+      frontmatter = yaml.load((node as any).value) as Frontmatter || {}
+    } catch (e) {
+      // Ignore YAML parse errors
     }
-  }
+  })
 
-  // Parse the rule content
-  const ruleContent = content.slice(contentStart).trim()
-  const ruleLines = ruleContent.split('\n')
-
-  // Extract title (first # or ## heading)
+  // Parse content
   let title = ''
-  let titleLine = 0
-  for (let i = 0; i < ruleLines.length; i++) {
-    if (ruleLines[i].startsWith('##')) {
-      title = ruleLines[i].replace(/^##+\s*/, '').trim()
-      titleLine = i
-      break
-    }
-  }
-
-  // Extract impact
-  let impact: Rule['impact'] = 'MEDIUM'
-  let impactDescription = ''
   let explanation = ''
-  let examples: Rule['examples'] = []
-  let references: string[] = []
+  const examples: CodeExample[] = []
+  const references: string[] = []
 
-  // Parse content after title
-  let currentExample: {
-    label: string
-    description?: string
-    code: string
-    language?: string
-    additionalText?: string
-  } | null = null
-  let inCodeBlock = false
-  let codeBlockLanguage = 'typescript'
-  let codeBlockContent: string[] = []
-  let afterCodeBlock = false
-  let additionalText: string[] = []
-  let hasCodeBlockForCurrentExample = false
+  let currentExample: CodeExample | null = null
+  let foundTitle = false
+  let inExampleSection = false
 
-  for (let i = titleLine + 1; i < ruleLines.length; i++) {
-    const line = ruleLines[i]
+  // Get all non-frontmatter children
+  const children = tree.children.filter(child => child.type !== 'yaml')
 
-    // Impact line
-    if (line.includes('**Impact:')) {
-      const match = line.match(
-        /\*\*Impact:\s*(\w+(?:-\w+)?)\s*(?:\(([^)]+)\))?/i
-      )
-      if (match) {
-        impact = match[1].toUpperCase().replace(/-/g, '-') as ImpactLevel
-        impactDescription = match[2] || ''
-      }
+  for (let i = 0; i < children.length; i++) {
+    const node = children[i]
+
+    // Extract title from first heading
+    if (node.type === 'heading' && !foundTitle) {
+      title = extractText(node)
+      foundTitle = true
       continue
     }
 
-    // Code block start
-    if (line.startsWith('```')) {
-      if (inCodeBlock) {
-        // End of code block
+    // Check for example labels
+    if (node.type === 'paragraph') {
+      const labelInfo = isExampleLabel(node)
+      if (labelInfo) {
+        // Save previous example
         if (currentExample) {
-          currentExample.code = codeBlockContent.join('\n')
-          currentExample.language = codeBlockLanguage
+          examples.push(currentExample)
         }
-        codeBlockContent = []
-        inCodeBlock = false
-        afterCodeBlock = true
-      } else {
-        // Start of code block
-        inCodeBlock = true
-        hasCodeBlockForCurrentExample = true
-        codeBlockLanguage = line.slice(3).trim() || 'typescript'
-        codeBlockContent = []
-        afterCodeBlock = false
-      }
-      continue
-    }
-
-    if (inCodeBlock) {
-      codeBlockContent.push(line)
-      continue
-    }
-
-    // Example label (Incorrect, Correct, Example, Usage, Implementation, etc.)
-    // Match pattern: **Label:** or **Label (description):** at end of line
-    // This distinguishes example labels from inline bold text like "**Trade-off:** some text"
-    const labelMatch = line.match(/^\*\*([^:]+?):\*?\*?$/)
-    if (labelMatch) {
-      // Save previous example if it exists
-      if (currentExample) {
-        if (additionalText.length > 0) {
-          currentExample.additionalText = additionalText.join('\n\n')
-          additionalText = []
+        currentExample = {
+          label: labelInfo.label,
+          description: labelInfo.description,
+          code: '',
+          language: 'typescript'
         }
-        examples.push(currentExample)
+        inExampleSection = true
+        continue
       }
-      afterCodeBlock = false
-      hasCodeBlockForCurrentExample = false
 
-      const fullLabel = labelMatch[1].trim()
-      // Try to extract description from parentheses if present (handles simple cases)
-      // For nested parentheses like "Incorrect (O(n) per lookup)", we keep the full label
-      const descMatch = fullLabel.match(
-        /^([A-Za-z]+(?:\s+[A-Za-z]+)*)\s*\(([^()]+)\)$/
-      )
-      currentExample = {
-        label: descMatch ? descMatch[1].trim() : fullLabel,
-        description: descMatch ? descMatch[2].trim() : undefined,
-        code: '',
-        language: codeBlockLanguage,
-      }
-      continue
-    }
-
-    // Reference links
-    if (line.startsWith('Reference:') || line.startsWith('References:')) {
-      // Save current example before processing references
-      if (currentExample) {
-        if (additionalText.length > 0) {
-          currentExample.additionalText = additionalText.join('\n\n')
-          additionalText = []
+      // Check for references
+      const refs = isReferenceLine(node)
+      if (refs) {
+        // Save current example before processing references
+        if (currentExample) {
+          examples.push(currentExample)
+          currentExample = null
         }
-        examples.push(currentExample)
-        currentExample = null
+        references.push(...refs)
+        inExampleSection = false
+        continue
       }
 
-      const refMatch = line.match(/\[([^\]]+)\]\(([^)]+)\)/g)
-      if (refMatch) {
-        references.push(
-          ...refMatch.map((ref) => {
-            const m = ref.match(/\[([^\]]+)\]\(([^)]+)\)/)
-            return m ? m[2] : ref
-          })
-        )
-      }
-      continue
-    }
-
-    // Regular text (explanation or additional context after examples)
-    if (line.trim() && !line.startsWith('#')) {
-      if (!currentExample && !inCodeBlock) {
+      // Regular paragraph - either explanation or additional text
+      const text = extractText(node)
+      if (!inExampleSection && !currentExample) {
         // Main explanation before any examples
-        explanation += (explanation ? '\n\n' : '') + line
-      } else if (currentExample && (afterCodeBlock || !hasCodeBlockForCurrentExample)) {
-        // Text after a code block, or text in a section without a code block
-        // (e.g., "When NOT to use this pattern:" with bullet points instead of code)
-        additionalText.push(line)
+        if (text.trim()) {
+          explanation += (explanation ? '\n\n' : '') + text
+        }
+      } else if (currentExample && currentExample.code) {
+        // Additional text after code block
+        if (text.trim()) {
+          currentExample.additionalText = (currentExample.additionalText || '') +
+            (currentExample.additionalText ? '\n\n' : '') + text
+        }
       }
+    }
+
+    // Extract code blocks
+    if (node.type === 'code' && currentExample) {
+      const codeNode = node as Code
+      currentExample.code = codeNode.value
+      currentExample.language = codeNode.lang || 'typescript'
     }
   }
 
-  // Handle last example if still open
+  // Save last example
   if (currentExample) {
-    if (additionalText.length > 0) {
-      currentExample.additionalText = additionalText.join('\n\n')
-    }
     examples.push(currentExample)
   }
 
   // Infer section from filename patterns
-  // Pattern: area-description.md where area determines section
   const filename = filePath.split('/').pop() || ''
   const sectionMap: Record<string, number> = {
     async: 1,
@@ -206,7 +226,6 @@ export async function parseRuleFile(filePath: string): Promise<RuleFile> {
     advanced: 8,
   }
 
-  // Extract area from filename (first part before first dash)
   const area = filename.split('-')[0]
   const section = frontmatter.section || sectionMap[area] || 0
 
@@ -215,8 +234,8 @@ export async function parseRuleFile(filePath: string): Promise<RuleFile> {
     title: frontmatter.title || title,
     section: section,
     subsection: undefined,
-    impact: frontmatter.impact || impact,
-    impactDescription: frontmatter.impactDescription || impactDescription,
+    impact: (frontmatter.impact?.toUpperCase() || 'MEDIUM') as ImpactLevel,
+    impactDescription: frontmatter.impactDescription || '',
     explanation: frontmatter.explanation || explanation.trim(),
     examples,
     references: frontmatter.references

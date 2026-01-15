@@ -1,6 +1,8 @@
 ---
 title: Performance Best Practices
 impact: LOW
+impactDescription: Unnecessary overhead and inefficiency
+tags: performance, optimization, python, javascript, django, sqlalchemy, react
 ---
 
 # Performance Best Practices

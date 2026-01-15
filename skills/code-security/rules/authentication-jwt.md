@@ -1,6 +1,8 @@
 ---
 title: Secure JWT Authentication
 impact: HIGH
+impactDescription: Authentication bypass and token forgery
+tags: security, authentication, jwt, cwe-287, cwe-347, owasp-a07
 ---
 
 ## Secure JWT Authentication
@@ -90,8 +92,8 @@ public class TokenHandler {
 }
 ```
 
-References:
-- https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures
-- https://owasp.org/Top10/A02_2021-Cryptographic_Failures/
-- https://cwe.mitre.org/data/definitions/287
-- https://cwe.mitre.org/data/definitions/347
+**References:**
+- [OWASP Software and Data Integrity Failures](https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures)
+- [OWASP Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+- [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287)
+- [CWE-347: Improper Verification of Cryptographic Signature](https://cwe.mitre.org/data/definitions/347)

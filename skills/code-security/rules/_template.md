@@ -25,4 +25,4 @@ const bad = example()
 const good = example()
 ```
 
-Reference: [Link to documentation or resource](https://example.com)
+**References:** [Link to documentation or resource](https://example.com)

@@ -1,6 +1,8 @@
 ---
 title: Avoid Unsafe Functions
 impact: HIGH
+impactDescription: Buffer overflows and memory corruption
+tags: security, unsafe-functions, c, php, python, go, rust, cwe-120, cwe-676
 ---
 
 ## Avoid Unsafe Functions

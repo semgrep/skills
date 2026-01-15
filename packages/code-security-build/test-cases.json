@@ -349,7 +349,7 @@
     "type": "bad",
     "code": "def append_func(default=[]):\n    default.append(5)",
     "language": "python",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -357,7 +357,7 @@
     "type": "good",
     "code": "def append_func(default=None):\n    if default is None:\n        default = []\n    default.append(5)",
     "language": "python",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -365,7 +365,7 @@
     "type": "bad",
     "code": "items = [1, 2, 3, 4]\nfor i in items:\n    items.pop(0)",
     "language": "python",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -373,7 +373,7 @@
     "type": "good",
     "code": "for i in list(items):  # Iterate over a copy\n    items.pop(0)",
     "language": "python",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -381,7 +381,7 @@
     "type": "bad",
     "code": "try:\n    raise ValueError()\nfinally:\n    break  # Suppresses the exception!",
     "language": "python",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -389,7 +389,7 @@
     "type": "bad",
     "code": "raise \"error\"",
     "language": "python",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -397,7 +397,7 @@
     "type": "good",
     "code": "raise Exception(\"error\")",
     "language": "python",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -405,7 +405,7 @@
     "type": "bad",
     "code": "bad = [\"a\" \"b\" \"c\"]  # Results in [\"abc\"]",
     "language": "python",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -413,7 +413,7 @@
     "type": "good",
     "code": "good = [\"a\", \"b\", \"c\"]",
     "language": "python",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -421,7 +421,7 @@
     "type": "bad",
     "code": "return `value is {x}`  // Missing $",
     "language": "javascript",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -429,7 +429,7 @@
     "type": "good",
     "code": "return `value is ${x}`",
     "language": "javascript",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -437,7 +437,7 @@
     "type": "bad",
     "code": "for _, val := range values {\n    funcs = append(funcs, func() {\n        fmt.Println(&val)  // Same pointer for all!\n    })\n}",
     "language": "go",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -445,7 +445,7 @@
     "type": "good",
     "code": "for _, val := range values {\n    val := val  // Create new variable\n    funcs = append(funcs, func() {\n        fmt.Println(&val)\n    })\n}",
     "language": "go",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -453,7 +453,7 @@
     "type": "bad",
     "code": "bigValue, _ := strconv.Atoi(\"2147483648\")\nvalue := int16(bigValue)  // Overflow!",
     "language": "go",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -461,7 +461,7 @@
     "type": "bad",
     "code": "if (a == \"hello\") return 1;",
     "language": "java",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -469,7 +469,7 @@
     "type": "good",
     "code": "if (\"hello\".equals(a)) return 1;",
     "language": "java",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -477,7 +477,7 @@
     "type": "bad",
     "code": "if (myBoolean = true) {  // Assignment, not comparison!",
     "language": "java",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -485,7 +485,7 @@
     "type": "good",
     "code": "if (myBoolean) {",
     "language": "java",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -493,7 +493,7 @@
     "type": "bad",
     "code": "int i = atoi(buf);",
     "language": "c",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -501,7 +501,7 @@
     "type": "good",
     "code": "long l = strtol(buf, NULL, 10);",
     "language": "c",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -509,7 +509,7 @@
     "type": "bad",
     "code": "exec $foo",
     "language": "bash",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -517,7 +517,7 @@
     "type": "good",
     "code": "exec \"$foo\"",
     "language": "bash",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -525,7 +525,7 @@
     "type": "bad",
     "code": "if (list.indexOf(item) > 0)  // Misses first element!",
     "language": "scala",
-    "description": "INCORRECT** example for Code Correctness"
+    "description": "INCORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -533,7 +533,7 @@
     "type": "good",
     "code": "if (list.indexOf(item) >= 0)",
     "language": "scala",
-    "description": "CORRECT** example for Code Correctness"
+    "description": "CORRECT example for Code Correctness"
   },
   {
     "ruleId": "",
@@ -1501,7 +1501,7 @@
     "type": "bad",
     "code": "def get_user_id(item):\n    return item.user.id",
     "language": "python",
-    "description": "INCORRECT** - Extra query to fetch related object example for Performance Best Practices"
+    "description": "INCORRECT - Extra query to fetch related object example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1509,7 +1509,7 @@
     "type": "good",
     "code": "def get_user_id(item):\n    return item.user_id",
     "language": "python",
-    "description": "CORRECT** - Use the foreign key directly example for Performance Best Practices"
+    "description": "CORRECT - Use the foreign key directly example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1517,7 +1517,7 @@
     "type": "bad",
     "code": "total = len(persons.all())",
     "language": "python",
-    "description": "INCORRECT** - Fetches all records into memory example for Performance Best Practices"
+    "description": "INCORRECT - Fetches all records into memory example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1525,7 +1525,7 @@
     "type": "good",
     "code": "total = persons.count()",
     "language": "python",
-    "description": "CORRECT** - Count performed server-side example for Performance Best Practices"
+    "description": "CORRECT - Count performed server-side example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1533,7 +1533,7 @@
     "type": "bad",
     "code": "for song in songs:\n    db.session.add(song)",
     "language": "python",
-    "description": "INCORRECT** - Adding one at a time in a loop example for Performance Best Practices"
+    "description": "INCORRECT - Adding one at a time in a loop example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1541,7 +1541,7 @@
     "type": "good",
     "code": "db.session.add_all(songs)",
     "language": "python",
-    "description": "CORRECT** - Batch add all at once example for Performance Best Practices"
+    "description": "CORRECT - Batch add all at once example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1549,7 +1549,7 @@
     "type": "bad",
     "code": "import styled from \"styled-components\";\n\nfunction FunctionalComponent() {\n  const StyledDiv = styled.div`\n    color: blue;\n  `\n  return <StyledDiv />\n}",
     "language": "tsx",
-    "description": "INCORRECT** - Styled component declared inside function example for Performance Best Practices"
+    "description": "INCORRECT - Styled component declared inside function example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1557,7 +1557,7 @@
     "type": "good",
     "code": "import styled from \"styled-components\";\n\nconst StyledDiv = styled.div`\n  color: blue;\n`\n\nfunction FunctionalComponent() {\n  return <StyledDiv />\n}",
     "language": "tsx",
-    "description": "CORRECT** - Styled component declared at module level example for Performance Best Practices"
+    "description": "CORRECT - Styled component declared at module level example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1565,7 +1565,7 @@
     "type": "bad",
     "code": "if (items.length === 0) { /* empty */ }",
     "language": "javascript",
-    "description": "INCORRECT** - Inefficient length check example for Performance Best Practices"
+    "description": "INCORRECT - Inefficient length check example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1573,7 +1573,7 @@
     "type": "good",
     "code": "if (!items.length) { /* empty */ }",
     "language": "javascript",
-    "description": "CORRECT** - Direct comparison when possible example for Performance Best Practices"
+    "description": "CORRECT - Direct comparison when possible example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1581,7 +1581,7 @@
     "type": "bad",
     "code": "const found = items.filter(x => x.id === targetId)[0];",
     "language": "javascript",
-    "description": "INCORRECT** - Full iteration to find one item example for Performance Best Practices"
+    "description": "INCORRECT - Full iteration to find one item example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1589,7 +1589,7 @@
     "type": "good",
     "code": "const found = items.find(x => x.id === targetId);",
     "language": "javascript",
-    "description": "CORRECT** - Short-circuit on first match example for Performance Best Practices"
+    "description": "CORRECT - Short-circuit on first match example for Performance Best Practices"
   },
   {
     "ruleId": "",

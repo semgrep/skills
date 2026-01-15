@@ -1,6 +1,8 @@
 ---
 title: Avoid Insecure Cryptography
 impact: HIGH
+impactDescription: Data decryption and signature forgery
+tags: security, cryptography, hashing, encryption, cwe-327, cwe-328, owasp-a02
 ---
 
 ## Avoid Insecure Cryptography

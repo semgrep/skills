@@ -1,6 +1,8 @@
 ---
 title: Avoid Hardcoded Secrets
 impact: CRITICAL
+impactDescription: Credential exposure and unauthorized access
+tags: security, secrets, credentials, api-keys, cwe-798, owasp-a07
 ---
 
 ## Avoid Hardcoded Secrets

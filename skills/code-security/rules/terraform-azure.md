@@ -1,6 +1,8 @@
 ---
 title: Secure Azure Terraform Configurations
 impact: HIGH
+impactDescription: Cloud misconfigurations and data exposure
+tags: security, terraform, azure, infrastructure, iac, storage, keyvault
 ---
 
 ## Secure Azure Terraform Configurations

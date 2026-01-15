@@ -1,6 +1,8 @@
 ---
 title: Secure Kubernetes Configurations
 impact: HIGH
+impactDescription: Container escapes and cluster compromise
+tags: security, kubernetes, k8s, containers, infrastructure, cwe-250
 ---
 
 ## Secure Kubernetes Configurations

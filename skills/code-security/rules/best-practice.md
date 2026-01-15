@@ -1,6 +1,8 @@
 ---
 title: Code Best Practices
 impact: LOW
+impactDescription: Code quality and maintainability issues
+tags: best-practices, code-quality, python, javascript
 ---
 
 ## Code Best Practices

@@ -1,6 +1,8 @@
 ---
 title: Secure AWS Terraform Configurations
 impact: HIGH
+impactDescription: Cloud misconfigurations and data exposure
+tags: security, terraform, aws, infrastructure, iac, s3, iam, ec2
 ---
 
 ## Secure AWS Terraform Configurations

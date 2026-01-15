@@ -58,7 +58,7 @@ var req = https.request({
 });
 ```
 
-Reference: [Node.js HTTPS Documentation](https://nodejs.org/api/https.html)
+**References:** [Node.js HTTPS Documentation](https://nodejs.org/api/https.html)
 
 ---
 
@@ -109,7 +109,7 @@ func ok() {
 }
 ```
 
-Reference: [Go TLS Documentation](https://golang.org/pkg/crypto/tls/)
+**References:** [Go TLS Documentation](https://golang.org/pkg/crypto/tls/)
 
 ---
 
@@ -143,7 +143,7 @@ import requests
 r = requests.get("https://example.com")
 ```
 
-Reference: [Python SSL Documentation](https://docs.python.org/3/library/ssl.html)
+**References:** [Python SSL Documentation](https://docs.python.org/3/library/ssl.html)
 
 ---
 
@@ -199,7 +199,7 @@ new X509TrustManager() {
 }
 ```
 
-Reference: [Java HTTPS Documentation](https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html)
+**References:** [Java HTTPS Documentation](https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html)
 
 ---
 

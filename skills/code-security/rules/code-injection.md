@@ -1,6 +1,8 @@
 ---
 title: Prevent Code Injection
 impact: CRITICAL
+impactDescription: Remote code execution via eval/exec
+tags: security, code-injection, rce, cwe-94, cwe-95, owasp-a03
 ---
 
 ## Prevent Code Injection

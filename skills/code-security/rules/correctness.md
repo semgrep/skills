@@ -1,6 +1,8 @@
 ---
 title: Code Correctness
 impact: MEDIUM
+impactDescription: Runtime errors and unexpected behavior
+tags: correctness, bugs, python, javascript, java, go, c
 ---
 
 # Code Correctness Rules

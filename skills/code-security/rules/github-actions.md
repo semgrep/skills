@@ -48,7 +48,7 @@ jobs:
 
 **Fix**: Use an intermediate environment variable with `env:` to store the data and use the environment variable in the `run:` script. Be sure to use double-quotes around the environment variable.
 
-Reference: [GitHub Actions Security Hardening - Script Injections](https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions#understanding-the-risk-of-script-injections)
+**References:** [GitHub Actions Security Hardening - Script Injections](https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions#understanding-the-risk-of-script-injections)
 
 ---
 
@@ -84,7 +84,7 @@ jobs:
         run: echo "Hello, world"
 ```
 
-Reference: [GitHub Actions Preventing Pwn Requests](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/)
+**References:** [GitHub Actions Preventing Pwn Requests](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/)
 
 ---
 
@@ -123,7 +123,7 @@ jobs:
       - run: echo "Safe operation"
 ```
 
-Reference: [GitHub Privilege Escalation Vulnerability](https://www.legitsecurity.com/blog/github-privilege-escalation-vulnerability)
+**References:** [GitHub Privilege Escalation Vulnerability](https://www.legitsecurity.com/blog/github-privilege-escalation-vulnerability)
 
 ---
 
@@ -155,7 +155,7 @@ jobs:
 
 Note: GitHub-owned actions (`actions/*`, `github/*`) and local actions (`./.github/actions/*`) don't require SHA pinning.
 
-Reference: [GitHub Actions Security Hardening - Using Third-Party Actions](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions)
+**References:** [GitHub Actions Security Hardening - Using Third-Party Actions](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions)
 
 ---
 

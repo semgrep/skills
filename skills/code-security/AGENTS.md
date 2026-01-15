@@ -58,7 +58,7 @@ Comprehensive code security guide, designed for AI agents and LLMs.
 
 ### 0.1 Avoid Hardcoded Secrets
 
-**Impact: CRITICAL**
+**Impact: CRITICAL (Credential exposure and unauthorized access)**
 
 Hardcoded credentials, API keys, tokens, and other secrets in source code pose a critical security risk. When secrets are committed to version control, they can be exposed to unauthorized parties through repository access, leaked in public repositories or through data breaches, difficult to rotate without code changes and redeployment, and discovered by automated secret scanning tools used by attackers. Always use environment variables, secret managers, or secure vaults to provide credentials at runtime.
 
@@ -217,19 +217,11 @@ response = requests.get("https://api.github.com/user", headers=headers)
 
 ### 0.2 Avoid Insecure Cryptography
 
-**Impact: HIGH**
+**Impact: HIGH (Data decryption and signature forgery)**
 
 Using weak or broken cryptographic algorithms puts sensitive data at risk. Attackers can exploit known vulnerabilities in deprecated algorithms to decrypt data, forge signatures, or predict "random" values.
 
 **Key vulnerabilities:**
-
-- **Weak hashing:** MD5 and SHA1 are vulnerable to collision attacks
-
-- **Weak encryption:** DES is deprecated due to small key/block sizes
-
-**References:** CWE-327 (Broken Crypto Algorithm), CWE-328 (Weak Hash), CWE-326 (Inadequate Encryption Strength)
-
----
 
 **Incorrect: MD5/SHA1 hashing**
 
@@ -266,8 +258,6 @@ key = b'Sixteen byte key'
 cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
 ```
 
----
-
 **Incorrect: MD5 hashing**
 
 ```javascript
@@ -287,8 +277,6 @@ function hashPassword(pwtext) {
     return crypto.createHash("sha256").update(pwtext).digest("hex");
 }
 ```
-
----
 
 **Incorrect: MD5/SHA1 hashing**
 
@@ -325,8 +313,6 @@ c.init(Cipher.ENCRYPT_MODE, k, iv);
 Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
 c.init(Cipher.ENCRYPT_MODE, k, iv);
 ```
-
----
 
 **Incorrect: MD5 hashing**
 
@@ -380,37 +366,19 @@ func encrypt() {
 }
 ```
 
----
-
 | Language   | Weak Algorithm | Secure Alternative |
-
 |------------|----------------|-------------------|
-
-| Python     | `hashlib.md5`, `hashlib.sha1` | `hashlib.sha256`, `hashlib.sha512` |
-
-| Python     | `DES.new()` | `AES.new()` with EAX/GCM mode |
-
-| JavaScript | `createHash("md5")` | `createHash("sha256")` |
-
-| Java       | `getInstance("MD5")`, `getInstance("SHA-1")` | `getInstance("SHA-512")` |
-
-| Java       | `getInstance("DES")` | `getInstance("AES/GCM/NoPadding")` |
-
-| Go         | `crypto/md5`, `crypto/sha1` | `crypto/sha256`, `crypto/sha512` |
-
-| Go         | `crypto/des` | `crypto/aes` |
-
-1. **Hashing:** Use SHA-256 or SHA-512 for general hashing. For passwords, use bcrypt, scrypt, or Argon2.
-
-2. **Encryption:** Use AES with authenticated modes (GCM, EAX). Avoid ECB mode.
-
-3. **Key sizes:** RSA keys should be at least 2048 bits. AES keys should be 256 bits.
-
-4. **Random numbers:** Use cryptographically secure random number generators for security-sensitive operations.
+| Python     | hashlib.md5, hashlib.sha1 | hashlib.sha256, hashlib.sha512 |
+| Python     | DES.new() | AES.new() with EAX/GCM mode |
+| JavaScript | createHash("md5") | createHash("sha256") |
+| Java       | getInstance("MD5"), getInstance("SHA-1") | getInstance("SHA-512") |
+| Java       | getInstance("DES") | getInstance("AES/GCM/NoPadding") |
+| Go         | crypto/md5, crypto/sha1 | crypto/sha256, crypto/sha512 |
+| Go         | crypto/des | crypto/aes |
 
 ### 0.3 Avoid Unsafe Functions
 
-**Impact: HIGH**
+**Impact: HIGH (Buffer overflows and memory corruption)**
 
 Certain functions in various programming languages are inherently dangerous because they do not perform boundary checks, can lead to buffer overflows, have been deprecated, or bypass type safety mechanisms. Using these functions can result in security vulnerabilities, memory corruption, and arbitrary code execution.
 
@@ -649,7 +617,7 @@ Printf.printf "%d\n" (Array.get cb 0)
 
 ### 0.4 Code Best Practices
 
-**Impact: LOW**
+**Impact: LOW (Code quality and maintainability issues)**
 
 This document outlines coding best practices across multiple languages. Following these patterns helps improve code quality, maintainability, and prevents common mistakes.
 
@@ -669,7 +637,7 @@ def func2():
         data = fd.read()
 ```
 
-`open()` uses device locale encodings by default. Always specify encoding in text mode.
+open() uses device locale encodings by default. Always specify encoding in text mode.
 
 **Incorrect:**
 
@@ -698,7 +666,7 @@ r = requests.get(url)
 r = requests.get(url, timeout=30)
 ```
 
-Debug statements like `alert()`, `confirm()`, `prompt()`, and `debugger` should not be in production code.
+Debug statements like alert(), confirm(), prompt(), and debugger should not be in production code.
 
 **Incorrect: JavaScript**
 
@@ -745,7 +713,7 @@ with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
     f.write(data)
 ```
 
-Always set `HttpOnly` and `Secure` flags on security-sensitive cookies.
+Always set HttpOnly and Secure flags on security-sensitive cookies.
 
 **Incorrect: JavaScript/Express**
 
@@ -793,18 +761,20 @@ import dayjs from 'dayjs';
 
 ### 0.5 Code Correctness
 
-**Impact: MEDIUM**
+**Impact: MEDIUM (Runtime errors and unexpected behavior)**
+
+Common coding mistakes that cause runtime errors, unexpected behavior, or logic issues.
 
 Python only instantiates default arguments once. Mutating them affects all future calls.
 
-**INCORRECT**:**
+**INCORRECT:**
 
 ```python
 def append_func(default=[]):
     default.append(5)
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```python
 def append_func(default=None):
@@ -813,7 +783,7 @@ def append_func(default=None):
     default.append(5)
 ```
 
-**INCORRECT**:**
+**INCORRECT:**
 
 ```python
 items = [1, 2, 3, 4]
@@ -821,16 +791,16 @@ for i in items:
     items.pop(0)
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```python
 for i in list(items):  # Iterate over a copy
     items.pop(0)
 ```
 
-Using `break`, `continue`, or `return` in `finally` suppresses exceptions.
+Using break, continue, or return in finally suppresses exceptions.
 
-**INCORRECT**:**
+**INCORRECT:**
 
 ```python
 try:
@@ -839,13 +809,13 @@ finally:
     break  # Suppresses the exception!
 ```
 
-**INCORRECT**:**
+**INCORRECT:**
 
 ```python
 raise "error"
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```python
 raise Exception("error")
@@ -853,37 +823,33 @@ raise Exception("error")
 
 Missing commas cause implicit string concatenation.
 
-**INCORRECT**:**
+**INCORRECT:**
 
 ```python
 bad = ["a" "b" "c"]  # Results in ["abc"]
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```python
 good = ["a", "b", "c"]
 ```
 
----
-
-**INCORRECT**:**
+**INCORRECT:**
 
 ```javascript
 return `value is {x}`  // Missing $
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```javascript
 return `value is ${x}`
 ```
 
----
-
 Loop variables are shared across iterations.
 
-**INCORRECT**:**
+**INCORRECT:**
 
 ```go
 for _, val := range values {
@@ -893,7 +859,7 @@ for _, val := range values {
 }
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```go
 for _, val := range values {
@@ -904,94 +870,86 @@ for _, val := range values {
 }
 ```
 
-**INCORRECT**:**
+**INCORRECT:**
 
 ```go
 bigValue, _ := strconv.Atoi("2147483648")
 value := int16(bigValue)  // Overflow!
 ```
 
-**CORRECT**: Use `strconv.ParseInt` with correct bit size.
+CORRECT: Use strconv.ParseInt with correct bit size.
 
----
-
-**INCORRECT**:**
+**INCORRECT:**
 
 ```java
 if (a == "hello") return 1;
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```java
 if ("hello".equals(a)) return 1;
 ```
 
-**INCORRECT**:**
+**INCORRECT:**
 
 ```java
 if (myBoolean = true) {  // Assignment, not comparison!
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```java
 if (myBoolean) {
 ```
 
----
+The ato*() functions cause undefined behavior on overflow.
 
-The `ato*()` functions cause undefined behavior on overflow.
-
-**INCORRECT**:**
+**INCORRECT:**
 
 ```c
 int i = atoi(buf);
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```c
 long l = strtol(buf, NULL, 10);
 ```
 
----
-
 Unquoted variables split on whitespace.
 
-**INCORRECT**:**
+**INCORRECT:**
 
 ```bash
 exec $foo
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```bash
 exec "$foo"
 ```
 
----
-
-**INCORRECT**:**
+**INCORRECT:**
 
 ```scala
 if (list.indexOf(item) > 0)  // Misses first element!
 ```
 
-**CORRECT**:**
+**CORRECT:**
 
 ```scala
 if (list.indexOf(item) >= 0)
 ```
 
-Atoms are never garbage collected. Use `String.to_existing_atom` instead of `String.to_atom`.
+Atoms are never garbage collected. Use String.to_existing_atom instead of String.to_atom.
 
-Use `=` not `==` for value comparison, `<>` not `!=` for inequality.
+Use = not == for value comparison, <> not != for inequality.
 
 ### 0.6 Code Maintainability
 
-**Impact: LOW**
+**Impact: LOW (Technical debt and code confusion)**
 
 Rules that identify code patterns leading to confusion, technical debt, or unexpected behavior. Focus areas: useless code, deprecated APIs, and code organization.
 
@@ -1094,7 +1052,7 @@ app = Flask(__name__)
 
 ### 0.7 Ensure Memory Safety
 
-**Impact: CRITICAL**
+**Impact: CRITICAL (Arbitrary code execution and data corruption)**
 
 Memory safety vulnerabilities are among the most critical security issues in software development. They can lead to arbitrary code execution, data corruption, denial of service, and information disclosure. This guide covers common memory safety issues in C/C++ including double-free, use-after-free, and buffer overflow vulnerabilities.
 
@@ -1199,76 +1157,60 @@ void safe_printf(char *user_input) {
 }
 ```
 
-1. **Set pointers to NULL after freeing** - Prevents use-after-free and double-free
-
-2. **Use bounded string functions** - `strncpy`, `snprintf` instead of `strcpy`, `sprintf`
-
-3. **Never use user input as format strings** - Always use fixed format strings
-
-4. **Validate array indices** - Check bounds before accessing arrays
-
-5. **Use static analysis tools** - Semgrep, Coverity, or similar to detect issues
-
-6. **Consider memory-safe languages** - Rust, Go, or managed languages where appropriate
-
 ### 0.8 Performance Best Practices
 
-**Impact: LOW**
+**Impact: LOW (Unnecessary overhead and inefficiency)**
 
-Use `ITEM.user_id` rather than `ITEM.user.id` to prevent running an extra query. Accessing `.user.id` causes Django to fetch the entire related User object just to get the ID, when the foreign key ID is already available on the model.
+This document covers performance optimizations to write efficient code. These rules identify patterns that cause unnecessary computational overhead, extra database queries, or memory inefficiency.
 
-**INCORRECT** - Extra query to fetch related object:**
+Use ITEM.user_id rather than ITEM.user.id to prevent running an extra query. Accessing .user.id causes Django to fetch the entire related User object just to get the ID, when the foreign key ID is already available on the model.
+
+**INCORRECT - Extra query to fetch related object:**
 
 ```python
 def get_user_id(item):
     return item.user.id
 ```
 
-**CORRECT** - Use the foreign key directly:**
+**CORRECT - Use the foreign key directly:**
 
 ```python
 def get_user_id(item):
     return item.user_id
 ```
 
----
+Using QUERY.count() instead of len(QUERY.all()) sends less data to the client since the count is performed server-side. The len(all()) approach fetches all records into memory just to count them.
 
-Using `QUERY.count()` instead of `len(QUERY.all())` sends less data to the client since the count is performed server-side. The `len(all())` approach fetches all records into memory just to count them.
-
-**INCORRECT** - Fetches all records into memory:**
+**INCORRECT - Fetches all records into memory:**
 
 ```python
 total = len(persons.all())
 ```
 
-**CORRECT** - Count performed server-side:**
+**CORRECT - Count performed server-side:**
 
 ```python
 total = persons.count()
 ```
 
----
+Rather than adding one element at a time, use batch loading to improve performance. Each individual db.session.add() in a loop can trigger separate database operations.
 
-Rather than adding one element at a time, use batch loading to improve performance. Each individual `db.session.add()` in a loop can trigger separate database operations.
-
-**INCORRECT** - Adding one at a time in a loop:**
+**INCORRECT - Adding one at a time in a loop:**
 
 ```python
 for song in songs:
     db.session.add(song)
 ```
 
-**CORRECT** - Batch add all at once:**
+**CORRECT - Batch add all at once:**
 
 ```python
 db.session.add_all(songs)
 ```
 
----
-
 By declaring a styled component inside the render method, you dynamically create a new component on every render. This forces React to discard and re-calculate that part of the DOM subtree on each render, leading to performance bottlenecks.
 
-**INCORRECT** - Styled component declared inside function:**
+**INCORRECT - Styled component declared inside function:**
 
 ```tsx
 import styled from "styled-components";
@@ -1281,7 +1223,7 @@ function FunctionalComponent() {
 }
 ```
 
-**CORRECT** - Styled component declared at module level:**
+**CORRECT - Styled component declared at module level:**
 
 ```tsx
 import styled from "styled-components";
@@ -1295,17 +1237,15 @@ function FunctionalComponent() {
 }
 ```
 
----
-
 Check array length efficiently without traversing the entire collection.
 
-**INCORRECT** - Inefficient length check:**
+**INCORRECT - Inefficient length check:**
 
 ```javascript
 if (items.length === 0) { /* empty */ }
 ```
 
-**CORRECT** - Direct comparison when possible:**
+**CORRECT - Direct comparison when possible:**
 
 ```javascript
 if (!items.length) { /* empty */ }
@@ -1313,13 +1253,13 @@ if (!items.length) { /* empty */ }
 
 For operations that require iterating, prefer built-in methods that short-circuit:
 
-**INCORRECT** - Full iteration to find one item:**
+**INCORRECT - Full iteration to find one item:**
 
 ```javascript
 const found = items.filter(x => x.id === targetId)[0];
 ```
 
-**CORRECT** - Short-circuit on first match:**
+**CORRECT - Short-circuit on first match:**
 
 ```javascript
 const found = items.find(x => x.id === targetId);
@@ -1327,7 +1267,7 @@ const found = items.find(x => x.id === targetId);
 
 ### 0.9 Prevent Code Injection
 
-**Impact: CRITICAL**
+**Impact: CRITICAL (Remote code execution via eval/exec)**
 
 Code injection vulnerabilities occur when an attacker can insert and execute arbitrary code within your application. This includes direct code evaluation (eval, exec), reflection-based attacks, and dynamic method invocation. These vulnerabilities can lead to complete system compromise, data theft, and remote code execution.
 
@@ -1437,33 +1377,11 @@ $fullpath = $_POST['fullpath'];
 $filesize = trim(shell_exec('stat -c %s ' . escapeshellarg($fullpath)));
 ```
 
-1. **Never pass user input to eval/exec functions** - Treat all user input as untrusted
-
-2. **Use hardcoded strings** - Static strings in eval/exec calls are safe
-
-3. **Validate and sanitize** - If dynamic code execution is unavoidable, validate against a strict whitelist
-
-4. **Use parameterized alternatives** - Many languages offer safer alternatives to eval
-
-5. **Escape shell arguments** - Use escapeshellarg() in PHP or equivalent functions
-
-- [OWASP Code Injection](https://owasp.org/www-community/attacks/Code_Injection)
-
-- [OWASP Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Injection_Prevention_Cheat_Sheet.html)
-
-- [CWE-94: Improper Control of Generation of Code](https://cwe.mitre.org/data/definitions/94.html)
-
-- [CWE-95: Eval Injection](https://cwe.mitre.org/data/definitions/95.html)
-
-- [MDN: Never use eval()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval#never_use_eval!)
-
 ### 0.10 Prevent Command Injection
 
 **Impact: CRITICAL (Remote code execution allowing attackers to run arbitrary commands on the host system)**
 
 Command injection occurs when untrusted input is passed to system shell commands. Attackers can execute arbitrary commands on the host system, potentially downloading malware, stealing data, or taking complete control of the server.
-
----
 
 **Incorrect: vulnerable to command injection via subprocess**
 
@@ -1493,8 +1411,6 @@ def ping():
     subprocess.run(["ping", ip])
 ```
 
----
-
 **Incorrect: vulnerable child_process with user input**
 
 ```javascript
@@ -1520,8 +1436,6 @@ function runCommand(userInput) {
 }
 ```
 
----
-
 **Incorrect: ProcessBuilder with user input via shell**
 
 ```java
@@ -1546,8 +1460,6 @@ public class CommandRunner {
     }
 }
 ```
-
----
 
 **Incorrect: dangerous command with user input via stdin**
 
@@ -1583,8 +1495,6 @@ func runCommand(filename string) {
 }
 ```
 
----
-
 **Incorrect: Shell methods with tainted input**
 
 ```ruby
@@ -1605,25 +1515,13 @@ def read_log
 end
 ```
 
----
-
 **References:**
-
-- CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
-
-- CWE-94: Improper Control of Generation of Code ('Code Injection')
-
-- [OWASP Command Injection](https://owasp.org/www-community/attacks/Command_Injection)
-
-- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection)
 
 ### 0.11 Prevent Cross-Site Request Forgery
 
 **Impact: HIGH (Attackers can force authenticated users to perform unwanted actions, potentially modifying data, transferring funds, or changing account settings)**
 
 Cross-Site Request Forgery (CSRF) is an attack that forces authenticated users to execute unwanted actions on a web application. When a user is authenticated, their browser automatically includes session cookies with requests. Attackers can craft malicious pages that trigger requests to vulnerable applications, causing actions to be performed without the user's consent.
-
----
 
 **Incorrect: using @csrf_exempt decorator**
 
@@ -1646,10 +1544,6 @@ def my_view(request):
 ```
 
 **References:**
-
-- [OWASP Top 10 A01:2021 - Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control)
-
----
 
 **Incorrect: Express app without csurf middleware**
 
@@ -1675,12 +1569,6 @@ app.use(csrf({ cookie: true }))
 ```
 
 **References:**
-
-- [csurf npm package](https://www.npmjs.com/package/csurf)
-
-- [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
-
----
 
 **Incorrect: explicitly disabling CSRF protection**
 
@@ -1717,10 +1605,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 **References:**
 
-- [Find Security Bugs - Spring CSRF](https://find-sec-bugs.github.io/bugs.htm#SPRING_CSRF_UNRESTRICTED_REQUEST_MAPPING)
-
----
-
 **Incorrect: controller without protect_from_forgery**
 
 ```ruby
@@ -1741,25 +1625,13 @@ end
 
 **References:**
 
-- [Rails ActionController RequestForgeryProtection](https://api.rubyonrails.org/classes/ActionController/RequestForgeryProtection/ClassMethods.html)
-
----
-
 **General References:**
-
-- CWE-352: Cross-Site Request Forgery (CSRF)
-
-- [OWASP Top 10 A01:2021 - Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control)
-
-- [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
 
 ### 0.12 Prevent Cross-Site Scripting (XSS)
 
 **Impact: CRITICAL (Client-side code execution, session hijacking, credential theft)**
 
 XSS occurs when untrusted data is included in web pages without proper validation or escaping. Attackers can execute scripts in victim's browser to steal cookies, session tokens, or other sensitive data.
-
----
 
 **Incorrect: vulnerable to XSS**
 
@@ -1780,12 +1652,6 @@ function renderUserContent(userInput) {
 ```
 
 **References:**
-
-- CWE-79: Improper Neutralization of Input During Web Page Generation
-
-- [OWASP XSS Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
-
----
 
 **Incorrect: user input in response**
 
@@ -1810,12 +1676,6 @@ def search():
 
 **References:**
 
-- CWE-79: Improper Neutralization of Input During Web Page Generation
-
-- [Flask Security Guide](https://flask.palletsprojects.com/en/1.0.x/security/)
-
----
-
 **Incorrect: request data in HttpResponse**
 
 ```python
@@ -1838,12 +1698,6 @@ def greet(request):
 ```
 
 **References:**
-
-- CWE-79: Improper Neutralization of Input During Web Page Generation
-
-- [Django Security](https://django-book.readthedocs.io/en/latest/chapter20.html#cross-site-scripting-xss)
-
----
 
 **Incorrect: writing request parameters directly**
 
@@ -1873,12 +1727,6 @@ public class UserServlet extends HttpServlet {
 
 **References:**
 
-- CWE-79: Improper Neutralization of Input During Web Page Generation
-
-- [Find Security Bugs - XSS Servlet](https://find-sec-bugs.github.io/bugs.htm#XSS_SERVLET)
-
----
-
 **Incorrect: writing user input to ResponseWriter**
 
 ```go
@@ -1902,12 +1750,6 @@ func greetHandler(w http.ResponseWriter, r *http.Request) {
 
 **References:**
 
-- CWE-79: Improper Neutralization of Input During Web Page Generation
-
-- [Go Security - XSS](https://blogtitle.github.io/robn-go-security-pearls-cross-site-scripting-xss/)
-
----
-
 **Incorrect: echoing user input**
 
 ```php
@@ -1930,33 +1772,11 @@ function greet() {
 
 **References:**
 
-- CWE-79: Improper Neutralization of Input During Web Page Generation
-
-- [PHP htmlspecialchars()](https://www.php.net/manual/en/function.htmlspecialchars.php)
-
----
-
-1. **Always escape output** - Use context-appropriate encoding (HTML, JavaScript, URL, CSS)
-
-2. **Use framework-provided templating** - Most frameworks auto-escape by default
-
-3. **Validate and sanitize input** - Whitelist allowed characters/patterns
-
-4. **Use Content Security Policy (CSP)** - Add defense-in-depth via HTTP headers
-
-5. **Use sanitization libraries** - DOMPurify, sanitize-html, OWASP Java Encoder
-
-6. **Never trust user input** - Treat all external data as potentially malicious
-
-7. **Set HttpOnly flag on cookies** - Prevents JavaScript access to session cookies
-
 ### 0.13 Prevent Insecure Deserialization
 
 **Impact: CRITICAL (Remote code execution allowing attackers to run arbitrary code on the server)**
 
 Insecure deserialization occurs when untrusted data is used to abuse the logic of an application, inflict denial of service attacks, or execute arbitrary code. Objects can be serialized into strings and later loaded from strings, but deserialization of untrusted data can lead to remote code execution (RCE). Never deserialize data from untrusted sources. Use safer alternatives like JSON for data interchange.
-
----
 
 **Incorrect: using pickle with user input**
 
@@ -1991,12 +1811,6 @@ def ok():
 
 **References:**
 
-- CWE-502: Deserialization of Untrusted Data
-
-- [Python pickle Documentation](https://docs.python.org/3/library/pickle.html)
-
----
-
 **Incorrect: using insecure deserialization libraries**
 
 ```typescript
@@ -2019,12 +1833,6 @@ module.exports.handler = function (req, res) {
 ```
 
 **References:**
-
-- CWE-502: Deserialization of Untrusted Data
-
-- [OWASP Deserialization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html)
-
----
 
 **Incorrect: using ObjectInputStream to deserialize untrusted data**
 
@@ -2056,14 +1864,6 @@ public class SafeDeserializer {
 
 **References:**
 
-- CWE-502: Deserialization of Untrusted Data
-
-- [OWASP Deserialization of Untrusted Data](https://www.owasp.org/index.php/Deserialization_of_untrusted_data)
-
-- [Oracle Java Security Guidelines](https://www.oracle.com/java/technologies/javase/seccodeguide.html#8)
-
----
-
 **Incorrect: using Marshal.load or YAML.load with user input**
 
 ```ruby
@@ -2093,12 +1893,6 @@ end
 
 **References:**
 
-- CWE-502: Deserialization of Untrusted Data
-
-- [Ruby Security Advisory](https://groups.google.com/g/rubyonrails-security/c/61bkgvnSGTQ/m/nehwjA8tQ8EJ)
-
----
-
 **Incorrect: using BinaryFormatter which is inherently insecure**
 
 ```csharp
@@ -2127,12 +1921,6 @@ public class SafeDeserialization {
 
 **References:**
 
-- CWE-502: Deserialization of Untrusted Data
-
-- [Microsoft BinaryFormatter Security Guide](https://docs.microsoft.com/en-us/dotnet/standard/serialization/binaryformatter-security-guide)
-
----
-
 **Incorrect: unserializing user-controlled data**
 
 ```php
@@ -2154,45 +1942,13 @@ $object = unserialize('O:1:"a":1:{s:5:"value";s:3:"100";}');
 
 **References:**
 
-- CWE-502: Deserialization of Untrusted Data
-
-- [PHP unserialize() Documentation](https://www.php.net/manual/en/function.unserialize.php)
-
-- [OWASP Insecure Deserialization](https://owasp.org/www-project-top-ten/2017/A8_2017-Insecure_Deserialization.html)
-
----
-
-1. **Never deserialize untrusted data** - Treat all external data as potentially malicious
-
-2. **Use JSON for data interchange** - JSON only returns primitive types (strings, arrays, objects, numbers, null)
-
-3. **Implement integrity checks** - Use HMACs to sign serialized data to detect tampering
-
-4. **Use allowlists for deserialization** - Only allow specific, known-safe classes to be deserialized
-
-5. **Avoid native serialization formats** - pickle, Marshal, ObjectInputStream, BinaryFormatter are all dangerous
-
-6. **Use safe YAML loaders** - Always use SafeLoader or safe_load with YAML libraries
-
-7. **Monitor and log deserialization** - Alert on unexpected deserialization attempts
-
-8. **Keep libraries updated** - Apply security patches promptly
-
 **References:**
-
-- CWE-502: Deserialization of Untrusted Data
-
-- [OWASP Deserialization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html)
-
-- [OWASP Top 10 A08:2021 - Software and Data Integrity Failures](https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/)
 
 ### 0.14 Prevent Path Traversal
 
 **Impact: CRITICAL (Arbitrary file access, information disclosure, file manipulation)**
 
 Path traversal occurs when user input is used to construct file paths without proper validation, allowing attackers to access files outside intended directories using sequences like "../". This can lead to sensitive data exposure, arbitrary file reads/writes, and system compromise.
-
----
 
 **Incorrect: vulnerable to path traversal**
 
@@ -2217,12 +1973,6 @@ def safe(request):
 ```
 
 **References:**
-
-- CWE-22: Path Traversal
-
-- [OWASP Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)
-
----
 
 **Incorrect: vulnerable to path traversal**
 
@@ -2252,12 +2002,6 @@ function readConfigFile() {
 
 **References:**
 
-- CWE-22: Path Traversal
-
-- [OWASP Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)
-
----
-
 **Incorrect: vulnerable to path traversal**
 
 ```javascript
@@ -2282,12 +2026,6 @@ function getFileSafe(req, res) {
 ```
 
 **References:**
-
-- CWE-22: Path Traversal
-
-- [OWASP Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)
-
----
 
 **Incorrect: vulnerable to path traversal**
 
@@ -2320,12 +2058,6 @@ public class FileServlet extends HttpServlet {
 ```
 
 **References:**
-
-- CWE-22: Path Traversal
-
-- [OWASP Path Traversal](https://www.owasp.org/index.php/Path_Traversal)
-
----
 
 **Incorrect: Clean does not prevent traversal**
 
@@ -2363,17 +2095,9 @@ func main() {
 }
 ```
 
-**Best Practice:** Use `filepath.FromSlash(path.Clean("/"+strings.Trim(req.URL.Path, "/")))` or the `SecureJoin` function from `github.com/cyphar/filepath-securejoin`.
+Best Practice: Use filepath.FromSlash(path.Clean("/"+strings.Trim(req.URL.Path, "/"))) or the SecureJoin function from github.com/cyphar/filepath-securejoin.
 
 **References:**
-
-- CWE-22: Path Traversal
-
-- [Go path.Clean Documentation](https://pkg.go.dev/path#Clean)
-
-- [filepath-securejoin Package](https://pkg.go.dev/github.com/cyphar/filepath-securejoin)
-
----
 
 **Incorrect: vulnerable to path traversal/RFI**
 
@@ -2395,12 +2119,6 @@ require_once(CONFIG_DIR . '/settings.php');
 
 **References:**
 
-- CWE-98: PHP Remote File Inclusion
-
-- [PHP include Documentation](https://www.php.net/manual/en/function.include.php)
-
----
-
 **Incorrect: vulnerable to path traversal**
 
 ```php
@@ -2420,17 +2138,13 @@ unlink('/storage/cache/temp.txt');
 
 **References:**
 
-- CWE-22: Path Traversal
-
-- [PHP unlink Documentation](https://www.php.net/manual/en/function.unlink)
-
 ### 0.15 Prevent Prototype Pollution
 
 **Impact: HIGH (Attackers can modify object prototypes to inject malicious properties)**
 
-Prototype pollution is a vulnerability that occurs when an attacker can modify the prototype of a base object, such as `Object.prototype` in JavaScript. This can create attributes that exist on every object or replace critical attributes with malicious ones.
+Prototype pollution is a vulnerability that occurs when an attacker can modify the prototype of a base object, such as Object.prototype in JavaScript. This can create attributes that exist on every object or replace critical attributes with malicious ones.
 
-**Mitigations:** Freeze prototypes with `Object.freeze(Object.prototype)`, use `Object.create(null)`, block `__proto__` and `constructor` keys, or use `Map` instead of objects.
+Mitigations: Freeze prototypes with Object.freeze(Object.prototype), use Object.create(null), block __proto__ and constructor keys, or use Map instead of objects.
 
 **Incorrect: JavaScript - dynamic property assignment from user input**
 
@@ -2513,10 +2227,6 @@ function controller(req, res) {
 
 **References:**
 
-- CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes
-
-- [OWASP Mass Assignment Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html)
-
 ### 0.16 Prevent Race Conditions
 
 **Impact: MEDIUM (Time-of-check Time-of-use (TOCTOU) vulnerabilities, insecure temporary files, data corruption)**
@@ -2525,15 +2235,7 @@ Race conditions occur when the behavior of software depends on the timing or seq
 
 Common race condition patterns include:
 
-- **Insecure temporary file creation**: Using functions that create predictable filenames, allowing attackers to create symlinks or replace files before they are opened
-
-- **TOCTOU file operations**: Checking file existence/permissions then operating on the file, creating a window for manipulation
-
-- **Hardcoded temporary paths**: Writing to shared /tmp directories without secure file creation, enabling symlink attacks
-
----
-
-Using `Filename.temp_file` might lead to race conditions since the file could be altered or replaced by a symlink before being opened.
+Using Filename.temp_file might lead to race conditions since the file could be altered or replaced by a symlink before being opened.
 
 **Incorrect: vulnerable to race condition**
 
@@ -2553,14 +2255,6 @@ close_out oc
 ```
 
 **References:**
-
-- CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition
-
-- [OCaml Filename Module Documentation](https://v2.ocaml.org/api/Filename.html)
-
----
-
-The `tempfile.mktemp()` function is explicitly marked as unsafe in Python's documentation. The file name returned may not exist when generated, but by the time you attempt to create it, another process may have created a file with that name.
 
 **Incorrect: vulnerable to race condition**
 
@@ -2593,14 +2287,6 @@ finally:
 ```
 
 **References:**
-
-- CWE-377: Insecure Temporary File
-
-- [Python tempfile Documentation](https://docs.python.org/3/library/tempfile.html)
-
----
-
-Using hardcoded paths in shared temporary directories like `/tmp` is insecure because other users on the system can predict and manipulate these files.
 
 **Incorrect: hardcoded tmp path**
 
@@ -2646,14 +2332,6 @@ def test5():
 
 **References:**
 
-- CWE-377: Insecure Temporary File
-
-- [Python tempfile.TemporaryFile Documentation](https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryFile)
-
----
-
-Creating files directly in `/tmp` without using `ioutil.TempFile` or `os.CreateTemp` is vulnerable to race conditions and symlink attacks.
-
 **Incorrect: hardcoded tmp path**
 
 ```go
@@ -2691,57 +2369,11 @@ func secureTemp() error {
 }
 ```
 
-**Best Practice:** Use `os.CreateTemp` (Go 1.16+) or `ioutil.TempFile` which atomically creates a new file with a unique name.
+Best Practice: Use os.CreateTemp (Go 1.16+) or ioutil.TempFile which atomically creates a new file with a unique name.
 
 **References:**
 
-- CWE-377: Insecure Temporary File
-
-- [OWASP Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control)
-
-- [Go ioutil.TempFile Documentation](https://pkg.go.dev/io/ioutil#TempFile)
-
----
-
-1. **Never use predictable filenames** - Always use secure random names
-
-2. **Use atomic file creation** - Functions that create and open in one operation
-
-3. **Set restrictive permissions** - Use mode 0600 or 0700 for temporary files/directories
-
-4. **Use per-user temporary directories** - Consider using `$TMPDIR` or user-specific paths
-
-5. **Clean up properly** - Delete temporary files in a finally block or defer statement
-
-1. **Avoid check-then-use patterns** - Don't check file existence before opening
-
-2. **Use atomic operations** - Prefer operations that check and act atomically
-
-3. **Use file descriptors** - Once opened, operate on the descriptor not the path
-
-4. **Lock files when needed** - Use advisory or mandatory locks for shared resources
-
-| Language | Insecure | Secure Alternative |
-
-|----------|----------|-------------------|
-
-| Python | `tempfile.mktemp()` | `tempfile.NamedTemporaryFile()`, `tempfile.mkstemp()` |
-
-| Go | `ioutil.WriteFile("/tmp/...")` | `os.CreateTemp()`, `ioutil.TempFile()` |
-
-| OCaml | `Filename.temp_file` | `Filename.open_temp_file` |
-
-| C | `tmpnam()`, `tempnam()` | `mkstemp()`, `mkstemps()` |
-
-| Java | `File.createTempFile()` then open | `Files.createTempFile()` with immediate use |
-
 **References:**
-
-- [CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition](https://cwe.mitre.org/data/definitions/367.html)
-
-- [CWE-377: Insecure Temporary File](https://cwe.mitre.org/data/definitions/377.html)
-
-- [OWASP Race Conditions](https://owasp.org/www-community/vulnerabilities/Race_Conditions)
 
 ### 0.17 Prevent Regular Expression DoS
 
@@ -2750,12 +2382,6 @@ func secureTemp() error {
 Regular Expression Denial of Service (ReDoS) occurs when attackers exploit inefficient regular expression patterns to cause excessive CPU consumption. Certain regex patterns with nested quantifiers or overlapping alternatives can experience "catastrophic backtracking" when matched against malicious input, causing the regex engine to take exponential time to evaluate.
 
 Common vulnerable patterns include:
-
-- Nested quantifiers: `(a+)+`, `(a*)*`, `(a|a)+`
-
-- Overlapping alternatives: `(a|aa)+`
-
-- Unbounded repetition with overlap: `.*.*`
 
 **Incorrect: vulnerable ReDoS pattern**
 
@@ -2777,8 +2403,6 @@ import { RE2 } from 're2';
 const re = new RE2("([a-z]+)+$");
 ```
 
----
-
 **Incorrect: non-literal RegExp with user input**
 
 ```javascript
@@ -2797,8 +2421,6 @@ function searchHandler(userInput) {
 }
 ```
 
----
-
 **Incorrect: incomplete string sanitization**
 
 ```javascript
@@ -2816,14 +2438,6 @@ function escapeQuotes(s) {
 ```
 
 **References:**
-
-- [OWASP ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
-
-- [Regular-Expressions.info ReDoS](https://www.regular-expressions.info/redos.html)
-
-- CWE-1333: Inefficient Regular Expression Complexity
-
----
 
 **Incorrect: inefficient regex pattern**
 
@@ -2863,51 +2477,13 @@ re2.match(r"^(a+)+$", data)
 
 **References:**
 
-- [Python re module](https://docs.python.org/3/library/re.html)
-
-- CWE-1333: Inefficient Regular Expression Complexity
-
----
-
-1. **Avoid nested quantifiers**: Never use patterns like `(a+)+` or `(.*)*`
-
-2. **Use atomic groups or possessive quantifiers** when available
-
-3. **Set timeouts**: Use regex timeout mechanisms to limit execution time
-
-4. **Use safe regex libraries**: RE2 (Go/Python/JS) guarantees linear-time matching
-
-5. **Validate user input length**: Limit input size before regex matching
-
-6. **Test with ReDoS analyzers**: Use tools like `safe-regex` or `recheck`
-
 **References:**
-
-- CWE-1333: Inefficient Regular Expression Complexity
-
-- CWE-400: Uncontrolled Resource Consumption
-
-- [OWASP ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
-
-- [Regular-Expressions.info ReDoS](https://www.regular-expressions.info/redos.html)
 
 ### 0.18 Prevent Server-Side Request Forgery
 
 **Impact: HIGH (Attackers can make requests from the server to internal systems, cloud metadata endpoints, or external services)**
 
 Server-Side Request Forgery (SSRF) occurs when an attacker can make a server-side application send HTTP requests to an arbitrary domain of the attacker's choosing. This can be used to:
-
-- Access internal services and APIs that are not exposed to the internet
-
-- Read cloud metadata endpoints (e.g., AWS EC2 metadata at 169.254.169.254)
-
-- Scan internal networks and ports
-
-- Bypass firewalls and access controls
-
-- Exfiltrate sensitive data
-
----
 
 **Incorrect: user input flows into URL host**
 
@@ -2933,8 +2509,6 @@ def fetch_user_data(request):
     response = requests.get(f"https://api.example.com/users/{user_id}")
     return HttpResponse(response.content)
 ```
-
----
 
 **Incorrect: user input in URL**
 
@@ -2963,8 +2537,6 @@ app.get('/fetch', async (req, res) => {
     res.send(response.data);
 });
 ```
-
----
 
 **Incorrect: user-controlled URL**
 
@@ -3000,8 +2572,6 @@ public class FetchController {
     }
 }
 ```
-
----
 
 **Incorrect: user input in URL host**
 
@@ -3039,8 +2609,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
----
-
 **Incorrect: user input in URL**
 
 ```php
@@ -3072,8 +2640,6 @@ function fetchData() {
 ?>
 ```
 
----
-
 **Incorrect: user input in HTTP request**
 
 ```ruby
@@ -3098,15 +2664,7 @@ def fetch_data
 end
 ```
 
----
-
 **References:**
-
-- CWE-918: Server-Side Request Forgery (SSRF)
-
-- [OWASP Top 10 A10:2021 - Server-Side Request Forgery](https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29)
-
-- [OWASP SSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)
 
 ### 0.19 Prevent SQL Injection
 
@@ -3150,8 +2708,6 @@ export async function handler(req: any, res: any) {
 
 XXE occurs when XML input containing a reference to an external entity is processed by a weakly configured XML parser. Attackers can access local files, perform SSRF, or cause DoS.
 
----
-
 **Incorrect: vulnerable to XXE**
 
 ```java
@@ -3177,14 +2733,6 @@ class GoodDocumentBuilderFactory {
 
 **References:**
 
-- CWE-611: Improper Restriction of XML External Entity Reference
-
-- [OWASP XXE Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html)
-
-- [Semgrep Java XXE Cheat Sheet](https://semgrep.dev/docs/cheat-sheets/java-xxe/)
-
----
-
 **Incorrect: vulnerable to XXE**
 
 ```python
@@ -3204,14 +2752,6 @@ def parse_xml():
 ```
 
 **References:**
-
-- CWE-611: Improper Restriction of XML External Entity Reference
-
-- [Python xml Documentation](https://docs.python.org/3/library/xml.html)
-
-- [defusedxml on GitHub](https://github.com/tiran/defusedxml)
-
----
 
 **Incorrect: vulnerable to XXE**
 
@@ -3234,12 +2774,6 @@ module.exports.parseXml = function(req, res) {
 ```
 
 **References:**
-
-- CWE-611: Improper Restriction of XML External Entity Reference
-
-- [OWASP XXE Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html)
-
----
 
 **Incorrect: vulnerable to XXE**
 
@@ -3270,12 +2804,6 @@ public void ParseXml(string input) {
 ```
 
 **References:**
-
-- CWE-611: Improper Restriction of XML External Entity Reference
-
-- [XXE and .NET](https://www.jardinesoftware.net/2016/05/26/xxe-and-net/)
-
----
 
 **Incorrect: vulnerable to XXE**
 
@@ -3319,13 +2847,9 @@ func parseXml() {
 
 **References:**
 
-- CWE-611: Improper Restriction of XML External Entity Reference
-
-- [OWASP XXE Processing](https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing)
-
 ### 0.21 Secure AWS Terraform Configurations
 
-**Impact: HIGH**
+**Impact: HIGH (Cloud misconfigurations and data exposure)**
 
 Security best practices for AWS Terraform configurations to prevent common misconfigurations.
 
@@ -3533,7 +3057,7 @@ provider "aws" {
 
 ### 0.22 Secure Azure Terraform Configurations
 
-**Impact: HIGH**
+**Impact: HIGH (Cloud misconfigurations and data exposure)**
 
 Security best practices for Azure infrastructure via Terraform. Misconfigurations can lead to data breaches and unauthorized access.
 
@@ -3840,7 +3364,7 @@ resource "azurerm_role_definition" "good" {
 
 ### 0.23 Secure Docker Configurations
 
-**Impact: HIGH**
+**Impact: HIGH (Container escapes and privilege escalation)**
 
 This guide provides security best practices for Dockerfiles and docker-compose configurations. Following these patterns helps prevent container escapes, privilege escalation, and other security vulnerabilities in containerized environments.
 
@@ -3938,7 +3462,7 @@ services:
       - /tmp/data:/tmp/data
 ```
 
-If unverified user data can reach the `run` or `create` method, it can result in running arbitrary containers.
+If unverified user data can reach the run or create method, it can result in running arbitrary containers.
 
 **Incorrect:**
 
@@ -3962,11 +3486,11 @@ def run_container():
 
 ### 0.24 Secure GCP Terraform Configurations
 
-**Impact: HIGH**
+**Impact: HIGH (Cloud misconfigurations and data exposure)**
+
+Impact: HIGH
 
 Secure configuration patterns for Google Cloud Platform (GCP) resources using Terraform.
-
----
 
 **Incorrect:**
 
@@ -3999,8 +3523,6 @@ resource "google_storage_bucket_iam_member" "restricted" {
   member = "user:jane@example.com"
 }
 ```
-
----
 
 **Incorrect:**
 
@@ -4036,8 +3558,6 @@ resource "google_compute_firewall" "restricted" {
 }
 ```
 
----
-
 **Incorrect:**
 
 ```hcl
@@ -4065,8 +3585,6 @@ resource "google_container_node_pool" "secure" {
 }
 ```
 
----
-
 **Incorrect:**
 
 ```hcl
@@ -4090,8 +3608,6 @@ resource "google_sql_database_instance" "secure" {
   }
 }
 ```
-
----
 
 **Incorrect:**
 
@@ -4123,8 +3639,6 @@ resource "google_project" "no_default_network" {
 }
 ```
 
----
-
 **Incorrect:**
 
 ```hcl
@@ -4152,8 +3666,6 @@ resource "google_bigquery_dataset" "encrypted" {
 }
 resource "google_pubsub_topic" "encrypted" { name = "topic"; kms_key_name = google_kms_crypto_key.key.id }
 ```
-
----
 
 **Incorrect:**
 
@@ -4185,8 +3697,6 @@ resource "google_notebooks_instance" "private" {
 }
 ```
 
----
-
 **Incorrect:**
 
 ```hcl
@@ -4207,43 +3717,19 @@ resource "google_dns_managed_zone" "strong" {
 }
 ```
 
----
-
-- [Google Cloud Security Best Practices](https://cloud.google.com/security/best-practices)
-
-- [CIS Google Cloud Platform Foundation Benchmark](https://www.cisecurity.org/benchmark/google_cloud_computing_platform)
-
-- [Terraform Google Provider Documentation](https://registry.terraform.io/providers/hashicorp/google/latest/docs)
-
 ### 0.25 Secure GitHub Actions
 
 **Impact: HIGH (Prevents code injection, secrets theft, and supply chain attacks in CI/CD pipelines)**
 
 GitHub Actions workflows can be vulnerable to several security issues including script injection, secrets exposure, and supply chain attacks. Attackers who exploit these vulnerabilities can steal repository secrets, inject malicious code, or compromise the entire CI/CD pipeline.
 
-1. **Script Injection**: Using untrusted input (like PR titles or issue bodies) directly in `run:` commands allows attackers to inject arbitrary code
+Using variable interpolation ${{...}} with github context data in a run: step could allow an attacker to inject their own code into the runner. This would allow them to steal secrets and code.
 
-2. **Privileged Triggers**: `pull_request_target` and `workflow_run` events run with elevated privileges, making checkout of untrusted code dangerous
+When using pull_request_target, the Action runs in the context of the target repository with access to all repository secrets. Checking out the incoming PR code while having access to secrets is dangerous because you may inadvertently execute arbitrary code from the incoming PR.
 
-3. **Supply Chain**: Third-party actions not pinned to commit SHAs can be compromised
-
----
-
-Using variable interpolation `${{...}}` with `github` context data in a `run:` step could allow an attacker to inject their own code into the runner. This would allow them to steal secrets and code.
-
----
-
-When using `pull_request_target`, the Action runs in the context of the target repository with access to all repository secrets. Checking out the incoming PR code while having access to secrets is dangerous because you may inadvertently execute arbitrary code from the incoming PR.
-
----
-
-Similar to `pull_request_target`, when using `workflow_run`, the Action runs in the context of the target repository with access to all repository secrets. Checking out incoming PR code with this trigger is dangerous.
-
----
+Similar to pull_request_target, when using workflow_run, the Action runs in the context of the target repository with access to all repository secrets. Checking out incoming PR code with this trigger is dangerous.
 
 An action sourced from a third-party repository on GitHub is not pinned to a full length commit SHA. Pinning an action to a full length commit SHA is currently the only way to use an action as an immutable release.
-
----
 
 **Incorrect: vulnerable to script injection via PR title**
 
@@ -4272,7 +3758,7 @@ jobs:
           echo "$PR_TITLE"
 ```
 
-**Fix**: Use an intermediate environment variable with `env:` to store the data and use the environment variable in the `run:` script. Be sure to use double-quotes around the environment variable.
+Fix: Use an intermediate environment variable with env: to store the data and use the environment variable in the run: script. Be sure to use double-quotes around the environment variable.
 
 **Incorrect: checking out PR code with pull_request_target**
 
@@ -4361,33 +3847,19 @@ jobs:
           message: "Thank you!"
 ```
 
-Note: GitHub-owned actions (`actions/*`, `github/*`) and local actions (`./.github/actions/*`) don't require SHA pinning.
+Note: GitHub-owned actions (actions/*, github/*) and local actions (./.github/actions/*) don't require SHA pinning.
 
 **References:**
-
-- [GitHub Actions Security Hardening](https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions)
-
-- [GitHub Security Lab - Preventing Pwn Requests](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/)
-
-- [GitHub Security Lab - Untrusted Input](https://securitylab.github.com/research/github-actions-untrusted-input/)
 
 Reference: [https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions#understanding-the-risk-of-script-injections](https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions#understanding-the-risk-of-script-injections), [https://securitylab.github.com/research/github-actions-preventing-pwn-requests/](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/), [https://www.legitsecurity.com/blog/github-privilege-escalation-vulnerability](https://www.legitsecurity.com/blog/github-privilege-escalation-vulnerability), [https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions)
 
 ### 0.26 Secure JWT Authentication
 
-**Impact: HIGH**
+**Impact: HIGH (Authentication bypass and token forgery)**
 
 JSON Web Tokens (JWT) are widely used for authentication and authorization. However, improper implementation can lead to serious security vulnerabilities including authentication bypass and token forgery. The most critical JWT vulnerability is decoding tokens without verifying their signatures, which allows attackers to forge tokens with arbitrary claims, impersonate any user, or escalate privileges.
 
 Related CWEs: CWE-287 (Improper Authentication), CWE-345 (Insufficient Verification of Data Authenticity), CWE-347 (Improper Verification of Cryptographic Signature).
-
-- https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures
-
-- https://owasp.org/Top10/A02_2021-Cryptographic_Failures/
-
-- https://cwe.mitre.org/data/definitions/287
-
-- https://cwe.mitre.org/data/definitions/347
 
 **Incorrect: JavaScript jsonwebtoken - decode without verify**
 
@@ -4470,19 +3942,15 @@ public class TokenHandler {
 }
 ```
 
+**References:**
+
 ### 0.27 Secure Kubernetes Configurations
 
-**Impact: HIGH**
+**Impact: HIGH (Container escapes and cluster compromise)**
 
 This guide provides security best practices for Kubernetes YAML configurations. Following these patterns helps prevent common security misconfigurations that could expose your containers and cluster to attacks.
 
 Key Security Principles:
-
-1. Least Privilege: Containers should run with minimal permissions and as non-root users
-
-2. Isolation: Limit host namespace sharing (PID, network, IPC) to prevent container escapes
-
-3. Secrets Management: Never store secrets directly in configuration files
 
 Running containers in privileged mode grants full access to the host, bypassing security boundaries.
 
@@ -4725,34 +4193,6 @@ spec:
 **Impact: HIGH (Exposure of sensitive data through cleartext transmission or improper certificate validation)**
 
 Insecure transport vulnerabilities occur when applications transmit sensitive data over unencrypted connections or when TLS/SSL certificate validation is disabled. This exposes data to man-in-the-middle (MITM) attacks where attackers can intercept, read, and modify communications. Key issues include:
-
-- **Cleartext transmission**: Using HTTP instead of HTTPS
-
-- **Disabled certificate verification**: Accepting any SSL certificate without validation
-
----
-
----
-
----
-
----
-
----
-
-- **CWE-295**: Improper Certificate Validation
-
-- **CWE-311**: Missing Encryption of Sensitive Data
-
-- **CWE-319**: Cleartext Transmission of Sensitive Information
-
-- [OWASP Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures)
-
-- [OWASP Transport Layer Protection Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html)
-
-- [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)
-
-- [CWE-295: Improper Certificate Validation](https://cwe.mitre.org/data/definitions/295.html)
 
 **Incorrect: HTTP requests without TLS**
 

@@ -1,6 +1,8 @@
 ---
 title: Secure Docker Configurations
 impact: HIGH
+impactDescription: Container escapes and privilege escalation
+tags: security, docker, containers, infrastructure, cwe-250
 ---
 
 ## Secure Docker Configurations
