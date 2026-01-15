@@ -8,6 +8,7 @@ import { join } from 'path'
 import { Rule, Section, GuidelinesDocument, ImpactLevel } from './types.js'
 import { parseRuleFile, RuleFile } from './parser.js'
 import { RULES_DIR, METADATA_FILE, OUTPUT_FILE } from './config.js'
+import { parseSectionsFile } from './sections.js'
 
 /**
  * Generate markdown from rules
@@ -172,45 +173,16 @@ async function build() {
       (a, b) => a.number - b.number
     )
 
-    // Read section metadata from consolidated _sections.md file
-    const sectionsFile = join(RULES_DIR, '_sections.md')
+    // Read section metadata from _sections.md using shared parser
     try {
-      const sectionsContent = await readFile(sectionsFile, 'utf-8')
+      const sectionMetadata = await parseSectionsFile()
 
-      // Parse sections using regex to match each section block (uses ### headings)
-      const sectionBlocks = sectionsContent
-        .split(/(?=^### \d+\. )/m)
-        .filter(Boolean)
-
-      for (const block of sectionBlocks) {
-        // Extract section number and title, removing section ID in parentheses
-        // Format: ### 1. SQL Injection (sql-injection)
-        const headerMatch = block.match(
-          /^### (\d+)\.\s+(.+?)(?:\s+\([^)]+\))?$/m
-        )
-        if (!headerMatch) continue
-
-        const sectionNumber = parseInt(headerMatch[1])
-        const sectionTitle = headerMatch[2].trim() // Strip (id) for output
-
-        // Extract impact (format: **Impact:** CRITICAL)
-        const impactMatch = block.match(/\*\*Impact:\*\*\s+(\w+(?:-\w+)?)/i)
-        const impactLevel = impactMatch
-          ? (impactMatch[1].toUpperCase().replace(/-/g, '-') as ImpactLevel)
-          : 'MEDIUM'
-
-        // Extract description (format: **Description:** text)
-        const descMatch = block.match(
-          /\*\*Description:\*\*\s+(.+?)(?=\n\n###|\n\n---|$)/s
-        )
-        const description = descMatch ? descMatch[1].trim() : ''
-
-        // Update section if it exists
-        const section = sections.find((s) => s.number === sectionNumber)
+      for (const meta of sectionMetadata) {
+        const section = sections.find((s) => s.number === meta.number)
         if (section) {
-          section.title = sectionTitle
-          section.impact = impactLevel
-          section.introduction = description
+          section.title = meta.title
+          section.impact = meta.impact
+          section.introduction = meta.description
         }
       }
     } catch (error) {

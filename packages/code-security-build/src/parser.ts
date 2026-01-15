@@ -10,6 +10,7 @@ import { visit } from 'unist-util-visit'
 import yaml from 'js-yaml'
 import type { Root, Code, Heading, Paragraph, Strong, Text, Link } from 'mdast'
 import { Rule, ImpactLevel, CodeExample } from './types.js'
+import { getSectionForFilename } from './sections.js'
 
 export interface RuleFile {
   section: number
@@ -213,44 +214,9 @@ export async function parseRuleFile(filePath: string): Promise<RuleFile> {
     examples.push(currentExample)
   }
 
-  // Map filename to section number based on _sections.md ordering
-  const filename = filePath.split('/').pop()?.replace('.md', '') || ''
-  const sectionMap: Record<string, number> = {
-    // Critical Impact (1-9)
-    'sql-injection': 1,
-    'command-injection': 2,
-    'xss': 3,
-    'xxe': 4,
-    'path-traversal': 5,
-    'insecure-deserialization': 6,
-    'code-injection': 7,
-    'secrets': 8,
-    'memory-safety': 9,
-    // High Impact (10-22)
-    'insecure-crypto': 10,
-    'insecure-transport': 11,
-    'ssrf': 12,
-    'authentication-jwt': 13,
-    'csrf': 14,
-    'prototype-pollution': 15,
-    'unsafe-functions': 16,
-    'terraform-aws': 17,
-    'terraform-azure': 18,
-    'terraform-gcp': 19,
-    'kubernetes': 20,
-    'docker': 21,
-    'github-actions': 22,
-    // Medium Impact (23-25)
-    'regex-dos': 23,
-    'race-condition': 24,
-    'correctness': 25,
-    // Low Impact (26-28)
-    'best-practice': 26,
-    'performance': 27,
-    'maintainability': 28,
-  }
-
-  const section = frontmatter.section || sectionMap[filename] || 0
+  // Get section number from _sections.md (parsed dynamically)
+  const filename = filePath.split('/').pop() || ''
+  const section = frontmatter.section || await getSectionForFilename(filename)
 
   const rule: Rule = {
     id: '', // Will be assigned by build script based on sorted order
