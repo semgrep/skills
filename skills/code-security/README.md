@@ -1,120 +1,113 @@
-# Code Security
+# Code Security Skill
 
-A structured repository for creating and maintaining Code Security Best Practices optimized for agents and LLMs.
+Comprehensive security guidelines for writing secure code across 15+ languages, covering OWASP Top 10, infrastructure security, and coding best practices.
+
+## Categories (28 Total)
+
+### Critical Impact
+- SQL Injection, Command Injection, XSS, XXE, Path Traversal
+- Insecure Deserialization, Code Injection, Hardcoded Secrets, Memory Safety
+
+### High Impact
+- Insecure Crypto, Insecure Transport, SSRF, JWT Auth, CSRF
+- Prototype Pollution, Unsafe Functions
+- Terraform (AWS/Azure/GCP), Kubernetes, Docker, GitHub Actions
+
+### Medium/Low Impact
+- Regex DoS, Race Conditions, Code Correctness
+- Best Practices, Performance, Maintainability
 
 ## Structure
 
-- `rules/` - Individual rule files (one per rule)
-  - `_sections.md` - Section metadata (titles, impacts, descriptions)
-  - `_template.md` - Template for creating new rules
-  - `{area}-{description}.md` - Individual rule files
-- `metadata.json` - Document metadata (version, organization, abstract)
-- __`AGENTS.md`__ - Compiled output (generated)
-- __`test-cases.json`__ - Test cases for LLM evaluation (generated)
+```
+code-security/
+├── SKILL.md           # Skill definition (loaded by agents)
+├── rules/             # Security rule files
+│   ├── _sections.md   # Index of all categories
+│   ├── _template.md   # Template for new rules
+│   ├── sql-injection.md
+│   ├── xss.md
+│   └── ...            # 28 rule files total
+├── metadata.json      # Skill metadata
+└── README.md          # This file
+```
 
-## Getting Started
+## Usage
 
-1. Change to build package
-   ```bash
-   cd packages/code-security-build
-   ```
+### For End Users
 
-1. Install dependencies:
-   ```bash
-   pnpm install
-   ```
+Install the skill:
+```bash
+npx add-skill semgrep/agent-skills
+```
 
-1. Build AGENTS.md from rules:
-   ```bash
-   pnpm build
-   ```
+The agent will automatically reference these guidelines when writing or reviewing code.
 
-1. Validate rule files:
-   ```bash
-   pnpm validate
-   ```
+### For Contributors
 
-1. Extract test cases:
-   ```bash
-   pnpm extract-tests
-   ```
+From the repo root:
+```bash
+make validate    # Validate all rule files
+make build       # Build the skill
+make zip         # Create distribution package
+make             # All of the above
+```
+
+Or from the build package:
+```bash
+cd packages/code-security-build
+pnpm install
+pnpm validate    # Validate rule files
+pnpm build       # Build AGENTS.md and test-cases.json
+```
 
 ## Creating a New Rule
 
-1. Copy `rules/_template.md` to `rules/{area}-{description}.md`
-2. Choose the appropriate area prefix:
-   - `sql-` for SQL security (Section 1)
-3. Fill in the frontmatter and content
-4. Ensure you have clear examples with explanations
-5. Run `pnpm build` from the build package to regenerate AGENTS.md and test-cases.json
-
-## Rule File Structure
-
-Each rule file should follow this structure:
+1. Copy `rules/_template.md` to `rules/{category}.md`
+2. Follow this structure:
 
 ```markdown
 ---
-title: Rule Title Here
-impact: MEDIUM
-impactDescription: Optional description
-tags: tag1, tag2, tag3
+title: Rule Title
+impact: HIGH
+tags: security, category-name
 ---
 
-## Rule Title Here
+## Rule Title
 
-Brief explanation of the rule and why it matters.
+Brief explanation of the vulnerability.
 
-**Incorrect (description of what's wrong):**
+**Incorrect (description):**
 
-```typescript
-// Bad code example
+```python
+# Vulnerable code
 ```
 
-**Correct (description of what's right):**
+**Correct (description):**
 
-```typescript
-// Good code example
+```python
+# Secure code
+```
 ```
 
-Optional explanatory text after examples.
-
-Reference: [Link](https://example.com)
-
-## File Naming Convention
-
-- Files starting with `_` are special (excluded from build)
-- Rule files: `area-description.md` (e.g., `sql-injection.md`)
-- Section is automatically inferred from filename prefix
-- Rules are sorted alphabetically by title within each section
-- IDs (e.g., 1.1, 1.2) are auto-generated during build
+3. Run `make validate` to check formatting
+4. Run `make` to rebuild everything
 
 ## Impact Levels
 
-- `CRITICAL` - Highest priority, major security gains
-- `HIGH` - Significant security improvements
-- `MEDIUM-HIGH` - Moderate-high gains
-- `MEDIUM` - Moderate security improvements
-- `LOW-MEDIUM` - Low-medium gains
-- `LOW` - Incremental improvements
+| Level | Description |
+|-------|-------------|
+| CRITICAL | Remote code execution, data breach |
+| HIGH | Significant security risk |
+| MEDIUM | Moderate risk, defense in depth |
+| LOW | Best practices, code quality |
 
-## Scripts
+## Languages Supported
 
-- `pnpm build` - Compile rules into AGENTS.md
-- `pnpm validate` - Validate all rule files
-- `pnpm extract-tests` - Extract test cases for LLM evaluation
-- `pnpm dev` - Build and validate
-
-## Contributing
-
-When adding or modifying rules:
-
-1. Use the correct filename prefix for your section
-2. Follow the `_template.md` structure
-3. Include clear bad/good examples with explanations
-4. Add appropriate tags
-5. Run `pnpm build` to regenerate AGENTS.md and test-cases.json
-6. Rules are automatically sorted by title - no need to manage numbers!
+Python, JavaScript/TypeScript, Java, Go, Ruby, PHP, C/C++, C#, Scala, Kotlin, Rust, HCL (Terraform), YAML (Kubernetes/Docker)
 
 ## Acknowledgments
 
-Originally created by [@DrewDennison](https://x.com/drewdennison) at [Semgrep](https://semgrep.dev). This work was heavily inspired by Vercel's [React Best Practices](https://vercel.com/blog/introducing-react-best-practices)
+Created by [@DrewDennison](https://x.com/drewdennison) at [Semgrep](https://semgrep.dev).
+
+Rules derived from [Semgrep Registry](https://semgrep.dev/r) with 2000+ security patterns.
