@@ -177,15 +177,16 @@ async function build() {
     try {
       const sectionsContent = await readFile(sectionsFile, 'utf-8')
 
-      // Parse sections using regex to match each section block
+      // Parse sections using regex to match each section block (uses ### headings)
       const sectionBlocks = sectionsContent
-        .split(/(?=^## \d+\. )/m)
+        .split(/(?=^### \d+\. )/m)
         .filter(Boolean)
 
       for (const block of sectionBlocks) {
         // Extract section number and title, removing section ID in parentheses
+        // Format: ### 1. SQL Injection (sql-injection)
         const headerMatch = block.match(
-          /^## (\d+)\.\s+(.+?)(?:\s+\([^)]+\))?$/m
+          /^### (\d+)\.\s+(.+?)(?:\s+\([^)]+\))?$/m
         )
         if (!headerMatch) continue
 
@@ -200,7 +201,7 @@ async function build() {
 
         // Extract description (format: **Description:** text)
         const descMatch = block.match(
-          /\*\*Description:\*\*\s+(.+?)(?=\n\n##|$)/s
+          /\*\*Description:\*\*\s+(.+?)(?=\n\n###|\n\n---|$)/s
         )
         const description = descMatch ? descMatch[1].trim() : ''
 
