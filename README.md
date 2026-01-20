@@ -88,6 +88,37 @@ Security guidelines for LLM applications based on the OWASP Top 10 for Large Lan
 
 ---
 
+### semgrep
+
+Run Semgrep static analysis scans and create custom detection rules for security vulnerabilities and bug patterns.
+
+**Use when:**
+- Running security scans with Semgrep
+- Creating custom Semgrep rules
+- Detecting specific vulnerability patterns
+- Setting up Semgrep in CI/CD pipelines
+
+**Capabilities:**
+
+| Feature | Description |
+|---------|-------------|
+| **Quick Scans** | Run `semgrep --config auto` or use curated rulesets |
+| **Rulesets** | security-audit, owasp-top-ten, cwe-top-25, trailofbits |
+| **Custom Rules** | Pattern matching and taint mode for data flow analysis |
+| **Test-Driven** | Write test cases first with `ruleid:` and `ok:` annotations |
+| **CI/CD** | GitHub Actions integration with diff-aware scanning |
+
+**Rule Creation Workflow:**
+1. Analyze the vulnerability pattern
+2. Create test cases first (test-driven development)
+3. Analyze AST structure with `semgrep --dump-ast`
+4. Write the rule (taint mode for injection, pattern matching for syntax)
+5. Iterate until 100% tests pass
+6. Optimize patterns
+
+**When to use taint mode:** SQL injection, command injection, XSS, path traversal, SSRF - any vulnerability where untrusted data flows to a dangerous sink.
+
+---
 
 ## Usage
 
@@ -99,6 +130,9 @@ Review this React component for security issues
 ```
 ```
 Help me implement input validation for my LLM chat endpoint
+```
+```
+Create a Semgrep rule to detect hardcoded API keys in Python
 ```
 
 ## Development
