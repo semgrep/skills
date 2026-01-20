@@ -17,11 +17,6 @@ Fast, pattern-based static analysis for security scanning and custom rule creati
 - Creating custom detection rules for your codebase
 - Data flow analysis with taint mode
 
-**Consider CodeQL instead when:**
-- Need complex interprocedural taint tracking across many files
-- Analyzing custom proprietary frameworks with deep semantics
-- Require whole-program analysis
-
 ## Installation
 
 ```bash
