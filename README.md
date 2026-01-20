@@ -7,7 +7,7 @@ Skills follow the [Agent Skills](https://agentskills.io/) format.
 ## Installation
 
 ```bash
-npx skills add semgrep/agent-skills
+npx skills add semgrep/skills
 ```
 
 ## Available Skills
