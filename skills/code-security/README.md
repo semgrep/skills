@@ -38,7 +38,7 @@ code-security/
 
 Install the skill:
 ```bash
-npx skills semgrep/skills
+npx skills add semgrep/skills
 ```
 
 The agent will automatically reference these guidelines when writing or reviewing code.

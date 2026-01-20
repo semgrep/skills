@@ -33,7 +33,7 @@ semgrep/
 
 Install the skill:
 ```bash
-npx skills semgrep/skills
+npx skills add semgrep/skills
 ```
 
 The agent will use this skill when you ask to:
