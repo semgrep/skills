@@ -109,6 +109,17 @@ make build-skill SKILL=llm-security
 - **Skills with `rules/`**: Runs validation, builds `AGENTS.md`, extracts test cases, creates zip
 - **Skills without `rules/`**: Only creates zip (no validation/build needed)
 
+### Before Committing
+
+**Always run `make` before committing and pushing changes.** This ensures:
+- All skills are validated
+- Generated files (AGENTS.md, zip packages) are up to date
+- Tests pass
+
+```bash
+make && git add -A && git commit -m "message" && git push
+```
+
 ## End-User Installation
 
 Document this installation method for users:
