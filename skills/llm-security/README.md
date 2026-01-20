@@ -37,7 +37,7 @@ llm-security/
 
 Install the skill:
 ```bash
-npx add-skill semgrep/agent-skills
+npx skills semgrep/skills
 ```
 
 The agent will automatically reference these guidelines when building or reviewing LLM applications.
