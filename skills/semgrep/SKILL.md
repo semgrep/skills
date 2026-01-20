@@ -209,7 +209,11 @@ semgrep --test --config rule.yaml test-file
 
 ## Detailed References
 
-For comprehensive rule creation documentation:
+**Official Semgrep Documentation:**
+- [Rule Syntax](https://semgrep.dev/docs/writing-rules/rule-syntax) - Complete YAML structure, operators, and options
+- [Rule Schema](https://github.com/semgrep/semgrep-interfaces/blob/main/rule_schema_v1.yaml) - Full JSON schema specification
+
+**Local References:**
 - [Workflow Guide](references/workflow.md) - Complete step-by-step rule creation process
 - [Quick Reference](references/quick-reference.md) - Pattern operators and taint components
 
@@ -293,6 +297,12 @@ jobs:
 
 # Resources
 
+**Rule Writing:**
+- Rule Syntax: https://semgrep.dev/docs/writing-rules/rule-syntax
+- Pattern Syntax: https://semgrep.dev/docs/writing-rules/pattern-syntax
+- Rule Schema: https://github.com/semgrep/semgrep-interfaces/blob/main/rule_schema_v1.yaml
+
+**General:**
 - Registry: https://semgrep.dev/explore
 - Playground: https://semgrep.dev/playground
 - Docs: https://semgrep.dev/docs/

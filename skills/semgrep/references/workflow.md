@@ -2,6 +2,11 @@
 
 Detailed workflow for creating production-quality Semgrep rules.
 
+> **Official Documentation:**
+> - [Rule Syntax](https://semgrep.dev/docs/writing-rules/rule-syntax) - Complete YAML reference
+> - [Pattern Syntax](https://semgrep.dev/docs/writing-rules/pattern-syntax) - Pattern matching guide
+> - [Rule Schema](https://github.com/semgrep/semgrep-interfaces/blob/main/rule_schema_v1.yaml) - Full schema specification
+
 ## Step 1: Analyze the Problem
 
 Before writing any code:

@@ -1,5 +1,9 @@
 # Semgrep Quick Reference
 
+> **Official Documentation:**
+> - [Rule Syntax](https://semgrep.dev/docs/writing-rules/rule-syntax) - Complete reference
+> - [Rule Schema](https://github.com/semgrep/semgrep-interfaces/blob/main/rule_schema_v1.yaml) - Full YAML/JSON schema
+
 ## Required Rule Fields
 
 ```yaml
