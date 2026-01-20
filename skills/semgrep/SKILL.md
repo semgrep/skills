@@ -32,7 +32,7 @@ python3 -m pip install semgrep
 brew install semgrep
 
 # Docker
-docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep --config auto /src
+docker run --rm -v "${PWD}:/src" semgrep/semgrep semgrep --config auto /src
 ```
 
 ---
@@ -43,7 +43,6 @@ docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep --config auto /src
 
 ```bash
 semgrep --config auto .                    # Auto-detect rules
-semgrep --config auto --metrics=off .      # Disable telemetry for proprietary code
 ```
 
 ## Using Rulesets
