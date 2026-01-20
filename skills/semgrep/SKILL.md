@@ -63,7 +63,6 @@ semgrep --config p/security-audit --config p/trailofbits .  # Multiple
 ```bash
 semgrep --config p/security-audit --sarif -o results.sarif .   # SARIF
 semgrep --config p/security-audit --json -o results.json .     # JSON
-semgrep --config p/security-audit --dataflow-traces .          # Show data flow
 ```
 
 ## Scan Specific Paths
