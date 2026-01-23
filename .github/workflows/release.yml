@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: packages/skill-build/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Build release
+        run: make release
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          {
+            echo "notes<<EOF"
+            echo "## Skills Included"
+            echo ""
+            for zip in skills/*.zip; do
+              skill_name=$(basename "$zip" .zip)
+              echo "- **$skill_name**"
+            done
+            echo ""
+            echo "## Installation"
+            echo ""
+            echo "### Claude Code CLI"
+            echo "\`\`\`bash"
+            echo "npx skills add semgrep/skills"
+            echo "\`\`\`"
+            echo ""
+            echo "### Manual Installation"
+            echo "\`\`\`bash"
+            echo "# Download and extract the skill you want"
+            echo "cp -r skills/{skill-name} ~/.claude/skills/"
+            echo "\`\`\`"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: ${{ steps.notes.outputs.notes }}
+          files: skills/*.zip
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

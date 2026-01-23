@@ -1,0 +1,55 @@
+name: Security Audit
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9:00 UTC
+    - cron: '0 9 * * 1'
+  push:
+    paths:
+      - '**/pnpm-lock.yaml'
+      - '**/package.json'
+  pull_request:
+    paths:
+      - '**/pnpm-lock.yaml'
+      - '**/package.json'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: packages/skill-build/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Run security audit
+        working-directory: packages/skill-build
+        run: pnpm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Check for outdated dependencies
+        working-directory: packages/skill-build
+        run: |
+          echo "## Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          pnpm outdated || true
+          pnpm outdated >> $GITHUB_STEP_SUMMARY 2>&1 || echo "All dependencies are up to date" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
