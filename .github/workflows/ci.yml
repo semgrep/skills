@@ -54,7 +54,7 @@ jobs:
         run: make zip
 
       - name: Upload skill packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: skill-packages
           path: skills/*.zip
