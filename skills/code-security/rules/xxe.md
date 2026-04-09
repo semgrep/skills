@@ -58,7 +58,7 @@ def parse_xml():
 **Correct (safe usage):**
 ```python
 def parse_xml():
-    from defusedxml.etree import ElementTree
+    import defusedxml.ElementTree as ElementTree
     tree = ElementTree.parse('data.xml')
     root = tree.getroot()
 ```
@@ -98,7 +98,7 @@ module.exports.parseXml = function(req, res) {
 
 ---
 
-### Language: C#
+### Language: C\#
 
 #### XmlReaderSettings with DtdProcessing.Parse
 

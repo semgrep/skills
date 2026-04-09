@@ -23,7 +23,7 @@ resource "google_storage_bucket" "insecure" {
   uniform_bucket_level_access = false
 }
 resource "google_storage_bucket_iam_member" "public" {
-  bucket = google_storage_bucket.default.name
+  bucket = google_storage_bucket.insecure.name
   role   = "roles/storage.admin"
   member = "allUsers"
 }
@@ -39,7 +39,7 @@ resource "google_storage_bucket" "secure" {
   logging { log_bucket = "my-logging-bucket" }
 }
 resource "google_storage_bucket_iam_member" "restricted" {
-  bucket = google_storage_bucket.default.name
+  bucket = google_storage_bucket.secure.name
   role   = "roles/storage.admin"
   member = "user:jane@example.com"
 }
@@ -58,7 +58,7 @@ resource "google_compute_instance" "insecure" {
   network_interface { network = "default"; access_config {} }
 }
 resource "google_compute_firewall" "open" {
-  name = "allow-all"; network = "google_compute_network.vpc.name"
+  name = "allow-all"; network = google_compute_network.vpc.name
   allow { protocol = "tcp"; ports = [22, 3389] }
   source_ranges = ["0.0.0.0/0"]
 }
@@ -75,7 +75,7 @@ resource "google_compute_instance" "secure" {
   shielded_instance_config { enable_vtpm = true; enable_integrity_monitoring = true }
 }
 resource "google_compute_firewall" "restricted" {
-  name = "allow-ssh"; network = "google_compute_network.vpc.name"
+  name = "allow-ssh"; network = google_compute_network.vpc.name
   allow { protocol = "tcp"; ports = ["22"] }
   source_ranges = ["172.1.2.3/32"]; target_tags = ["ssh"]
 }
@@ -147,7 +147,7 @@ resource "google_project_iam_member" "dangerous" {
   member  = "serviceAccount:test-compute@developer.gserviceaccount.com"
 }
 resource "google_compute_subnetwork" "no_logs" {
-  name = "example"; ip_cidr_range = "10.0.0.0/16"; network = "google_compute_network.vpc.id"
+  name = "example"; ip_cidr_range = "10.0.0.0/16"; network = google_compute_network.vpc.id
 }
 resource "google_project" "default_network" {
   name = "My Project"; project_id = "your-project-id"; org_id = "1234567"
@@ -160,7 +160,7 @@ resource "google_project_iam_member" "safe" {
   project = "your-project-id"; role = "roles/viewer"; member = "user:jane@example.com"
 }
 resource "google_compute_subnetwork" "with_logs" {
-  name = "example"; ip_cidr_range = "10.0.0.0/16"; network = "google_compute_network.vpc.self_link"
+  name = "example"; ip_cidr_range = "10.0.0.0/16"; network = google_compute_network.vpc.self_link
   log_config { aggregation_interval = "INTERVAL_10_MIN"; flow_sampling = 0.5 }
 }
 resource "google_project" "no_default_network" {

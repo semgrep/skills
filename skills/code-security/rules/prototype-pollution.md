@@ -25,18 +25,24 @@ app.get('/test/:id', (req, res) => {
 });
 ```
 
-**Correct (JavaScript - validate against dangerous keys):**
+**Correct (JavaScript - validate keys and use null-prototype objects):**
 
 ```javascript
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 app.post('/test/:id', (req, res) => {
-    let id = req.params.id;
-    if (id !== 'constructor' && id !== '__proto__') {
-        let items = req.session.todos[id];
-        if (!items) {
-            items = req.session.todos[id] = {};
-        }
-        items[req.query.name] = req.query.text;
+    const id = req.params.id;
+    const name = req.query.name;
+
+    if (DANGEROUS_KEYS.has(id) || DANGEROUS_KEYS.has(name)) {
+        return res.status(400).end();
     }
+
+    let items = req.session.todos[id];
+    if (!items) {
+        items = req.session.todos[id] = Object.create(null);
+    }
+    items[name] = req.query.text;
     res.end(200);
 });
 ```

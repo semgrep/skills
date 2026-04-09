@@ -212,18 +212,28 @@ func main() {
 // Avoid using the unsafe package. Use Go's type-safe alternatives for memory operations.
 ```
 
-**Incorrect (Rust - unsafe block bypasses safety):**
+**Incorrect (Rust - calling C FFI without unsafe block):**
 
 ```rust
 // ruleid: unsafe-usage
-let pid = unsafe { libc::getpid() as u32 };
+// This will not compile — libc::getpid() is an extern "C" function and requires unsafe
+let pid = libc::getpid() as u32;
 ```
 
-**Correct (Rust - use safe alternatives):**
+**Correct — Option A (Rust - use safe standard library alternative, preferred):**
 
 ```rust
 // ok: unsafe-usage
-let pid = libc::getpid() as u32;
+// std::process::id() is a safe wrapper that returns the OS-assigned PID
+let pid: u32 = std::process::id();
+```
+
+**Correct — Option B (Rust - minimally scoped unsafe block with SAFETY comment):**
+
+```rust
+// ok: unsafe-usage
+// SAFETY: libc::getpid() is a read-only syscall with no preconditions
+let pid = unsafe { libc::getpid() } as u32;
 ```
 
 **Incorrect (OCaml - unsafe functions skip bounds checks):**

@@ -49,7 +49,7 @@ total = persons.count()
 
 ### SQLAlchemy - Batch Database Operations
 
-Rather than adding one element at a time, use batch loading to improve performance. Each individual `db.session.add()` in a loop can trigger separate database operations.
+Rather than adding one element at a time, use batch loading to improve performance. Looping `db.session.add()` increases session bookkeeping overhead and can trigger per-iteration SQL if autoflush is enabled (e.g., when a query runs during the loop).
 
 **INCORRECT** - Adding one at a time in a loop:
 ```python
@@ -99,16 +99,23 @@ function FunctionalComponent() {
 
 ### Avoid Unnecessary Operations in Loops
 
-Check array length efficiently without traversing the entire collection.
+Hoist expensive work (object allocations, RegExp compilation, function creation) out of loops.
 
-**INCORRECT** - Inefficient length check:
+**INCORRECT** - RegExp compiled on every iteration:
 ```javascript
-if (items.length === 0) { /* empty */ }
+for (const line of lines) {
+  const match = line.match(new RegExp('\\d{4}-\\d{2}-\\d{2}'));
+  if (match) results.push(match[0]);
+}
 ```
 
-**CORRECT** - Direct comparison when possible:
+**CORRECT** - Compile once, reuse in loop:
 ```javascript
-if (!items.length) { /* empty */ }
+const datePattern = /\d{4}-\d{2}-\d{2}/;
+for (const line of lines) {
+  const match = line.match(datePattern);
+  if (match) results.push(match[0]);
+}
 ```
 
 For operations that require iterating, prefer built-in methods that short-circuit:

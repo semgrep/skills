@@ -216,7 +216,7 @@ spec:
   volumes:
     - name: docker-sock-volume
       hostPath:
-        type: File
+        type: Socket
         path: /var/run/docker.sock
 ```
 

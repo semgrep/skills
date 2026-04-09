@@ -24,14 +24,13 @@ function getUserData(token) {
 }
 ```
 
-**Correct (JavaScript jsonwebtoken - verify before decode):**
+**Correct (JavaScript jsonwebtoken - use verify which returns decoded payload):**
 
 ```javascript
 const jwt = require('jsonwebtoken');
 
 function getUserData(token, secretKey) {
-  jwt.verify(token, secretKey);
-  const decoded = jwt.decode(token, true);
+  const decoded = jwt.verify(token, secretKey);
   if (decoded.isAdmin) {
     return getAdminData();
   }

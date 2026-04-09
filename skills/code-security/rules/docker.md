@@ -16,7 +16,7 @@ The last user in the container should not be 'root'. If an attacker gains contro
 **Incorrect:**
 
 ```dockerfile
-FROM busybox
+FROM debian:bookworm
 RUN apt-get update && apt-get install -y some-package
 USER appuser
 USER root
@@ -25,7 +25,7 @@ USER root
 **Correct:**
 
 ```dockerfile
-FROM busybox
+FROM debian:bookworm
 USER root
 RUN apt-get update && apt-get install -y some-package
 USER appuser
@@ -102,7 +102,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
-**Correct:**
+**Correct (use a named volume instead of host mounts):**
 
 ```yaml
 version: "3.9"
@@ -110,7 +110,9 @@ services:
   worker:
     image: my-worker-image:1.0
     volumes:
-      - /tmp/data:/tmp/data
+      - worker-data:/app/data
+volumes:
+  worker-data:
 ```
 
 ### Arbitrary Container Run (Python Docker SDK)

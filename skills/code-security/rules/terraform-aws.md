@@ -11,24 +11,33 @@ Security best practices for AWS Terraform configurations to prevent common misco
 
 ### S3 Encryption
 
-**Incorrect:**
+**Incorrect (bucket without server-side encryption):**
 ```hcl
-resource "aws_s3_bucket_object" "fail" {
-  bucket  = aws_s3_bucket.bucket.bucket
-  key     = "my-object"
-  content = "data"
+resource "aws_s3_bucket" "bucket" {
+  bucket = "my-bucket"
 }
 ```
 
-**Correct:**
+**Correct (bucket-level KMS encryption via `aws_s3_bucket_server_side_encryption_configuration`):**
 ```hcl
-resource "aws_s3_bucket_object" "pass" {
-  bucket     = aws_s3_bucket.bucket.bucket
-  key        = "my-object"
-  content    = "data"
-  kms_key_id = aws_kms_key.example.arn
+resource "aws_s3_bucket" "bucket" {
+  bucket = "my-bucket"
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "pass" {
+  bucket = aws_s3_bucket.bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.example.arn
+    }
+    bucket_key_enabled = true
+  }
 }
 ```
+
+> **Note:** `aws_s3_bucket_object` is deprecated in AWS provider 4+. Use `aws_s3_object` for individual objects, and configure encryption at the bucket level with `aws_s3_bucket_server_side_encryption_configuration` so all objects inherit it automatically.
 
 ### IAM Overly Permissive Policies
 

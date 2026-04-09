@@ -42,30 +42,64 @@ def my_view(request):
 
 #### Missing CSRF Middleware
 
-**Incorrect (Express app without csurf middleware):**
-```javascript
-var express = require('express')
-var bodyParser = require('body-parser')
+> **⚠ Deprecation Notice:** The `csurf` npm package is **deprecated** and should not be used in new projects. Use a maintained alternative such as `csrf-csrf` (Double-Submit Cookie pattern) or `csrf-sync` (Synchronizer Token pattern).
 
-var app = express()
+**Incorrect (Express app without CSRF protection):**
+```javascript
+const express = require('express')
+const bodyParser = require('body-parser')
+
+const app = express()
 
 app.post('/process', bodyParser.urlencoded({ extended: false }), function(req, res) {
     res.send('data is being processed')
 })
 ```
 
-**Correct (include csurf middleware):**
+**Correct — Option A: `csrf-csrf` (Double-Submit Cookie pattern):**
 ```javascript
-var csrf = require('csurf')
-var express = require('express')
+const express = require('express')
+const cookieParser = require('cookie-parser')
+const { doubleCsrf } = require('csrf-csrf')
 
-var app = express()
-app.use(csrf({ cookie: true }))
+const { doubleCsrfProtection, generateToken } = doubleCsrf({
+  getSecret: () => process.env.CSRF_SECRET,
+  cookieName: '__Host-psifi.x-csrf-token',
+  cookieOptions: { sameSite: 'strict', secure: true },
+})
+
+const app = express()
+app.use(cookieParser())
+app.use(doubleCsrfProtection)
+
+// Generate a token for forms/SPA clients
+app.get('/csrf-token', (req, res) => {
+  res.json({ token: generateToken(req, res) })
+})
 ```
 
+**Correct — Option B: `csrf-sync` (Synchronizer Token pattern):**
+```javascript
+const express = require('express')
+const { csrfSync } = require('csrf-sync')
+
+const { csrfSynchronisedProtection, generateToken } = csrfSync()
+
+const app = express()
+app.use(csrfSynchronisedProtection)
+```
+
+**Additional defenses (complement token-based CSRF protection):**
+- Set `SameSite=Strict` or `SameSite=Lax` on session cookies.
+- Validate `Sec-Fetch-Site` / `Origin` headers (Fetch Metadata) to reject cross-origin requests at the edge.
+
 **References:**
-- [csurf npm package](https://www.npmjs.com/package/csurf)
+- [csrf-csrf (Double-Submit Cookie)](https://www.npmjs.com/package/csrf-csrf)
+- [csrf-sync (Synchronizer Token)](https://www.npmjs.com/package/csrf-sync)
+- [csurf — deprecated](https://www.npmjs.com/package/csurf) *(do not use in new projects)*
 - [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
+- [OWASP Fetch Metadata / Resource Isolation Policy](https://web.dev/articles/fetch-metadata)
+- [MDN SameSite Cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value)
 
 ---
 

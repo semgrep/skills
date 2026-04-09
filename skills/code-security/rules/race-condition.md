@@ -51,7 +51,7 @@ The `tempfile.mktemp()` function is explicitly marked as unsafe in Python's docu
 
 **Incorrect (vulnerable to race condition):**
 ```python
-import tempfile as tf
+import tempfile
 
 # ruleid: tempfile-insecure
 x = tempfile.mktemp()
@@ -61,6 +61,7 @@ x = tempfile.mktemp(dir="/tmp")
 
 **Correct (use secure alternatives):**
 ```python
+import os
 import tempfile
 
 # Use NamedTemporaryFile which atomically creates and opens the file
@@ -157,39 +158,32 @@ func main() {
 }
 ```
 
-**Correct (use TempFile for atomic creation):**
+**Correct (use os.CreateTemp for atomic creation):**
 ```go
+import "os"
+
 func main_good() {
 	// ok:bad-tmp-file-creation
-	err := ioutil.Tempfile("/tmp", "my_temp")
+	f, err := os.CreateTemp("", "my_temp-*.txt")
+	if err != nil {
+		fmt.Println("Error while creating temp file!")
+		return
+	}
+	defer f.Close()
+
+	_, err = f.WriteString("secure data")
 	if err != nil {
 		fmt.Println("Error while writing!")
 	}
 }
 ```
 
-**Best Practice:** Use `os.CreateTemp` (Go 1.16+) or `ioutil.TempFile` which atomically creates a new file with a unique name.
-
-```go
-import "os"
-
-func secureTemp() error {
-    // Atomically creates a file with a random suffix
-    f, err := os.CreateTemp("", "prefix-*.txt")
-    if err != nil {
-        return err
-    }
-    defer f.Close()
-
-    _, err = f.WriteString("secure data")
-    return err
-}
-```
+> **Note:** `ioutil.TempFile` is deprecated since Go 1.16. Use `os.CreateTemp` which is a direct replacement. For pre-1.16 code, `ioutil.TempFile` has the same behavior.
 
 **References:**
 - CWE-377: Insecure Temporary File
-- [OWASP Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control)
-- [Go ioutil.TempFile Documentation](https://pkg.go.dev/io/ioutil#TempFile)
+- [CWE-367: TOCTOU Race Condition](https://cwe.mitre.org/data/definitions/367.html)
+- [Go os.CreateTemp Documentation](https://pkg.go.dev/os#CreateTemp)
 
 ---
 
@@ -215,7 +209,7 @@ func secureTemp() error {
 | Language | Insecure | Secure Alternative |
 |----------|----------|-------------------|
 | Python | `tempfile.mktemp()` | `tempfile.NamedTemporaryFile()`, `tempfile.mkstemp()` |
-| Go | `ioutil.WriteFile("/tmp/...")` | `os.CreateTemp()`, `ioutil.TempFile()` |
+| Go | `ioutil.WriteFile("/tmp/...")` | `os.CreateTemp()` (`ioutil.TempFile()` is deprecated) |
 | OCaml | `Filename.temp_file` | `Filename.open_temp_file` |
 | C | `tmpnam()`, `tempnam()` | `mkstemp()`, `mkstemps()` |
 | Java | `File.createTempFile()` then open | `Files.createTempFile()` with immediate use |
