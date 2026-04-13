@@ -18,7 +18,7 @@ resource "azurerm_storage_account" "bad" {
   resource_group_name       = azurerm_resource_group.example.name
   location                  = azurerm_resource_group.example.location
   min_tls_version           = "TLS1_0"
-  enable_https_traffic_only = false
+  allow_nested_items_to_be_public = true
 }
 
 resource "azurerm_storage_container" "bad" {
@@ -35,7 +35,7 @@ resource "azurerm_storage_account" "good" {
   resource_group_name       = azurerm_resource_group.example.name
   location                  = azurerm_resource_group.example.location
   min_tls_version           = "TLS1_2"
-  enable_https_traffic_only = true
+  allow_nested_items_to_be_public = false
   network_rules {
     default_action             = "Deny"
     ip_rules                   = ["100.0.0.1"]
@@ -55,32 +55,34 @@ resource "azurerm_storage_container" "good" {
 
 **Incorrect:**
 ```hcl
-resource "azurerm_app_service" "bad" {
-  name                     = "example-app-service"
-  location                 = azurerm_resource_group.example.location
-  resource_group_name      = azurerm_resource_group.example.name
-  app_service_plan_id      = azurerm_app_service_plan.example.id
-  https_only               = false
-  remote_debugging_enabled = true
+resource "azurerm_linux_web_app" "bad" {
+  name                = "example-app-service"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  service_plan_id     = azurerm_service_plan.example.id
+  https_only          = false
   site_config {
-    min_tls_version = "1.0"
+    remote_debugging_enabled = true
+    minimum_tls_version      = "1.0"
     cors { allowed_origins = ["*"] }
   }
   auth_settings { enabled = false }
 }
 ```
 
+> **Note:** `azurerm_app_service` is deprecated (removed in AzureRM v4). Use `azurerm_linux_web_app` or `azurerm_windows_web_app`.
+
 **Correct:**
 ```hcl
-resource "azurerm_app_service" "good" {
-  name                     = "example-app-service"
-  location                 = azurerm_resource_group.example.location
-  resource_group_name      = azurerm_resource_group.example.name
-  app_service_plan_id      = azurerm_app_service_plan.example.id
-  https_only               = true
-  remote_debugging_enabled = false
+resource "azurerm_linux_web_app" "good" {
+  name                = "example-app-service"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  service_plan_id     = azurerm_service_plan.example.id
+  https_only          = true
   site_config {
-    min_tls_version = "1.2"
+    remote_debugging_enabled = false
+    minimum_tls_version      = "1.2"
     cors { allowed_origins = ["https://example.com"] }
   }
   auth_settings { enabled = true }
@@ -122,7 +124,7 @@ resource "azurerm_key_vault_key" "good" {
   key_vault_id    = azurerm_key_vault.example.id
   key_type        = "RSA"
   key_size        = 2048
-  expiration_date = "2025-12-31T00:00:00Z"
+  expiration_date = "2027-12-31T00:00:00Z"
   key_opts        = ["decrypt", "encrypt", "sign", "unwrapKey", "verify", "wrapKey"]
 }
 ```
@@ -194,9 +196,8 @@ resource "azurerm_kubernetes_cluster" "good" {
   location                        = azurerm_resource_group.example.location
   resource_group_name             = azurerm_resource_group.example.name
   dns_prefix                      = "exampleaks1"
-  private_cluster_enabled         = true
-  disk_encryption_set_id          = azurerm_disk_encryption_set.example.id
-  api_server_authorized_ip_ranges = ["192.168.0.0/16"]
+  private_cluster_enabled = true
+  disk_encryption_set_id  = azurerm_disk_encryption_set.example.id
   default_node_pool { name = "default"; node_count = 1; vm_size = "Standard_D2_v2" }
   identity { type = "SystemAssigned" }
 }
@@ -275,7 +276,7 @@ resource "azurerm_container_group" "good" {
   resource_group_name = azurerm_resource_group.example.name
   ip_address_type     = "private"
   os_type             = "Linux"
-  network_profile_id  = azurerm_network_profile.example.id
+  subnet_ids          = [azurerm_subnet.example.id]
   container { name = "hello-world"; image = "microsoft/aci-helloworld:latest"; cpu = "0.5"; memory = "1.5" }
 }
 ```

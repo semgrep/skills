@@ -87,14 +87,17 @@ function getFile(entry) {
 }
 ```
 
-**Correct (path sanitized):**
+**Correct (resolve and enforce boundary):**
 ```javascript
 const path = require('path');
 
 function getFileSafe(req, res) {
-  let somePath = req.body.path;
-  somePath = somePath.replace(/^(\.\.(\/|\\|$))+/, '');
-  return path.join(opts.path, somePath);
+  const baseDir = path.resolve(opts.path);
+  const resolved = path.resolve(baseDir, '.' + req.body.path);
+  if (!resolved.startsWith(baseDir + path.sep)) {
+    throw new Error('path traversal attempt');
+  }
+  return extractFile(resolved);
 }
 ```
 

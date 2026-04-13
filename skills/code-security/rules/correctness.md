@@ -58,6 +58,14 @@ finally:
     break  # Suppresses the exception!
 ```
 
+**CORRECT** - Let the exception propagate; use finally only for cleanup:
+```python
+try:
+    raise ValueError()
+finally:
+    cleanup()  # Cleanup runs, exception still propagates
+```
+
 ### Raising Non-Exceptions
 
 **INCORRECT**:
@@ -106,7 +114,9 @@ return `value is ${x}`
 
 ### Loop Pointer Export
 
-Loop variables are shared across iterations.
+> **Note:** Go 1.22+ scopes loop variables per-iteration, fixing this issue. The pattern below applies to Go < 1.22.
+
+Loop variables are shared across iterations (Go < 1.22).
 
 **INCORRECT**:
 ```go
@@ -135,7 +145,15 @@ bigValue, _ := strconv.Atoi("2147483648")
 value := int16(bigValue)  // Overflow!
 ```
 
-**CORRECT**: Use `strconv.ParseInt` with correct bit size.
+**CORRECT**:
+```go
+parsed, err := strconv.ParseInt("2147483648", 10, 32)
+if err != nil {
+    // handles out-of-range and invalid syntax
+    log.Fatal(err)
+}
+value := int32(parsed)
+```
 
 ---
 
@@ -180,7 +198,12 @@ int i = atoi(buf);
 
 **CORRECT**:
 ```c
-long l = strtol(buf, NULL, 10);
+char *endptr;
+errno = 0;
+long l = strtol(buf, &endptr, 10);
+if (errno != 0 || endptr == buf || *endptr != '\0') {
+    // handle conversion error
+}
 ```
 
 ---

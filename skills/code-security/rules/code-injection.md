@@ -17,14 +17,19 @@ def unsafe(request):
     eval(code)
 ```
 
-**Correct (Python - static eval with hardcoded strings):**
+**Correct (Python - avoid eval entirely, use safe alternatives):**
 
 ```python
-eval("x = 1; x = x + 2")
+import ast
 
-blah = "import requests; r = requests.get('https://example.com')"
-eval(blah)
+def safe_parse(user_expr):
+    # ast.literal_eval only allows literals (strings, numbers, tuples, lists, dicts, booleans, None)
+    return ast.literal_eval(user_expr)
+
+# For math expressions, use a purpose-built parser instead of eval
 ```
+
+> **Note:** Avoid `eval()`/`exec()` entirely. Even with hardcoded strings, it normalizes a dangerous pattern. Use `ast.literal_eval()` for parsing data literals, or purpose-built parsers for expressions.
 
 **Incorrect (JavaScript - eval with dynamic content):**
 
@@ -38,14 +43,19 @@ function evalSomething(something) {
 }
 ```
 
-**Correct (JavaScript - static eval strings):**
+**Correct (JavaScript - avoid eval, use safe alternatives):**
 
 ```javascript
-eval('var x = "static strings are okay";');
+// Instead of eval for JSON parsing:
+const data = JSON.parse(jsonString);
 
-const constVar = "function staticStrings() { return 'static strings are okay';}";
-eval(constVar);
+// Instead of eval for dynamic property access:
+const value = obj[propertyName];
+
+// Instead of eval for math: use a sandboxed expression parser
 ```
+
+> **Note:** There is almost never a legitimate reason to use `eval()`. Use `JSON.parse()`, computed property access, or a sandboxed parser. Avoid `new Function()` as well — it executes arbitrary code just like `eval()`.
 
 **Incorrect (Java - ScriptEngine injection):**
 
@@ -94,34 +104,35 @@ a = %q{def hello() "Hello there!" end}
 Thing.module_eval(a)
 ```
 
-**Incorrect (PHP - dangerous exec functions with user input):**
+**Incorrect (PHP - code injection via eval/assert):**
 
 ```php
-exec($user_input);
-passthru($user_input);
-$output = shell_exec($user_input);
-$output = system($user_input, $retval);
+$code = $_GET['code'];
+eval($code);
 
-$username = $_COOKIE['username'];
-exec("wto -n \"$username\" -g", $ret);
+$input = $_POST['input'];
+assert($input);  // assert() evaluates strings as code in PHP < 8.0
 ```
 
-**Correct (PHP - static commands with escapeshellarg):**
+**Correct (PHP - avoid eval, use structured alternatives):**
 
 ```php
-exec('whoami');
+// Instead of eval for dynamic config, use a data format:
+$config = json_decode(file_get_contents('config.json'), true);
 
-$fullpath = $_POST['fullpath'];
-$filesize = trim(shell_exec('stat -c %s ' . escapeshellarg($fullpath)));
+// Instead of eval for templates, use a template engine (Twig, Blade)
 ```
+
+> **Note:** `exec()`/`shell_exec()`/`system()` are OS command execution — see the command-injection rule for those. This rule covers code evaluation via `eval()`, `assert()`, `preg_replace` with `/e`, and similar.
 
 ## Key Prevention Patterns
 
-1. **Never pass user input to eval/exec functions** - Treat all user input as untrusted
-2. **Use hardcoded strings** - Static strings in eval/exec calls are safe
-3. **Validate and sanitize** - If dynamic code execution is unavoidable, validate against a strict whitelist
-4. **Use parameterized alternatives** - Many languages offer safer alternatives to eval
-5. **Escape shell arguments** - Use escapeshellarg() in PHP or equivalent functions
+1. **Avoid eval/exec entirely** - Use safer alternatives (`JSON.parse`, `ast.literal_eval`, template engines, computed property access)
+2. **Never pass user input to code evaluation functions** - Treat all user input as untrusted
+3. **If dynamic code execution is unavoidable** - Validate against a strict allowlist and sandbox the execution
+4. **Use parameterized alternatives** - Most languages offer structured APIs that eliminate the need for eval
+
+> For OS command execution (`exec`, `shell_exec`, `system`) and shell-escaping (`escapeshellarg`), see the **command-injection** rule.
 
 ## References
 

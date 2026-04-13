@@ -93,8 +93,7 @@ void bad_code(char *user_input) {
 ```c
 void safe_code(char *user_input) {
     char buffer[64];
-    strncpy(buffer, user_input, sizeof(buffer) - 1);
-    buffer[sizeof(buffer) - 1] = '\0';  // Ensure null termination
+    snprintf(buffer, sizeof(buffer), "%s", user_input);  // Bounds-checked, always null-terminates
 }
 ```
 
@@ -121,7 +120,7 @@ void safe_printf(char *user_input) {
 ### Prevention Best Practices
 
 1. **Set pointers to NULL after freeing** - Prevents use-after-free and double-free
-2. **Use bounded string functions** - `strncpy`, `snprintf` instead of `strcpy`, `sprintf`
+2. **Use bounded string functions** - `snprintf` instead of `strcpy`/`sprintf` (`strncpy` requires manual null-termination — prefer `snprintf`)
 3. **Never use user input as format strings** - Always use fixed format strings
 4. **Validate array indices** - Check bounds before accessing arrays
 5. **Use static analysis tools** - Semgrep, Coverity, or similar to detect issues

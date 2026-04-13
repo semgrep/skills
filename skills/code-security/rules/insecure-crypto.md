@@ -68,15 +68,21 @@ function hashPassword(pwtext) {
 }
 ```
 
-**Correct (SHA256 hashing):**
+**Correct (bcrypt for password hashing):**
 
 ```javascript
-const crypto = require("crypto");
+const bcrypt = require("bcrypt");
 
-function hashPassword(pwtext) {
-    return crypto.createHash("sha256").update(pwtext).digest("hex");
+async function hashPassword(pwtext) {
+    return bcrypt.hash(pwtext, 12);
+}
+
+async function verifyPassword(pwtext, hash) {
+    return bcrypt.compare(pwtext, hash);
 }
 ```
+
+> **Note:** SHA-256/SHA-512 are fine for data integrity but too fast for password hashing. Use bcrypt, scrypt, or Argon2 for passwords.
 
 ---
 
@@ -94,21 +100,23 @@ byte[] hash = md5.digest();
 MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
 ```
 
-**Correct (SHA-512 hashing):**
+**Correct (BCrypt for password hashing):**
 
 ```java
-import java.security.MessageDigest;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-MessageDigest sha512 = MessageDigest.getInstance("SHA-512");
-sha512.update(password.getBytes());
-byte[] hash = sha512.digest();
+BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+String hash = encoder.encode(password);
+boolean matches = encoder.matches(password, hash);
 ```
+
+> **Note:** `MessageDigest` (SHA-256/SHA-512) is appropriate for data integrity checks but not for password storage. Use BCrypt, scrypt, or Argon2 for passwords.
 
 **Incorrect (DES cipher):**
 
 ```java
 Cipher c = Cipher.getInstance("DES/ECB/PKCS5Padding");
-c.init(Cipher.ENCRYPT_MODE, k, iv);
+c.init(Cipher.ENCRYPT_MODE, k);
 ```
 
 **Correct (AES with GCM):**

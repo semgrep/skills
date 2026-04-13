@@ -184,22 +184,46 @@ new X509TrustManager() {
 }
 ```
 
-**Correct (proper certificate validation):**
+**Correct — Option A: Use the JVM default trust manager (preferred):**
+
+Do not create a custom `X509TrustManager`. The JVM default already performs full PKIX chain validation against the system trust store:
+
 ```java
-new X509TrustManager() {
-    public X509Certificate[] getAcceptedIssuers() { return null; }
-    public void checkClientTrusted(X509Certificate[] certs, String authType) { }
-    public void checkServerTrusted(X509Certificate[] certs, String authType) {
-        try {
-            checkValidity();
-        } catch (Exception e) {
-            throw new CertificateException("Certificate not valid or trusted.");
-        }
-    }
-}
+// HttpClient uses the JVM default SSLContext, which validates certificates properly
+HttpClient client = HttpClient.newBuilder().build();
+
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("https://example.com/"))
+    .build();
+
+HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
 ```
 
-**References:** [Java HTTPS Documentation](https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html)
+**Correct — Option B: Explicit SSLContext with default TrustManagerFactory (when custom configuration is needed):**
+
+```java
+TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+tmf.init((KeyStore) null); // uses the JVM default trust store
+
+SSLContext sslContext = SSLContext.getInstance("TLS");
+sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
+
+// Enable hostname verification
+SSLParameters sslParams = new SSLParameters();
+sslParams.setEndpointIdentificationAlgorithm("HTTPS");
+
+HttpClient client = HttpClient.newBuilder()
+    .sslContext(sslContext)
+    .sslParameters(sslParams)
+    .build();
+```
+
+> **⚠ Never implement a custom `X509TrustManager`** that only calls `checkValidity()` — this checks certificate expiry but skips PKIX chain-of-trust validation and hostname verification, leaving the connection vulnerable to MITM attacks.
+
+**References:**
+- [Java HttpClient Documentation](https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html)
+- [TrustManagerFactory (Java SE)](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/TrustManagerFactory.html)
+- [SSLParameters.setEndpointIdentificationAlgorithm](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html#setEndpointIdentificationAlgorithm(java.lang.String))
 
 ---
 
