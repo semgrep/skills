@@ -11,9 +11,9 @@
     "ruleId": "",
     "ruleTitle": "Secure JWT Authentication",
     "type": "good",
-    "code": "const jwt = require('jsonwebtoken');\n\nfunction getUserData(token, secretKey) {\n  jwt.verify(token, secretKey);\n  const decoded = jwt.decode(token, true);\n  if (decoded.isAdmin) {\n    return getAdminData();\n  }\n}",
+    "code": "const jwt = require('jsonwebtoken');\n\nfunction getUserData(token, secretKey) {\n  const decoded = jwt.verify(token, secretKey);\n  if (decoded.isAdmin) {\n    return getAdminData();\n  }\n}",
     "language": "javascript",
-    "description": "JavaScript jsonwebtoken - verify before decode"
+    "description": "JavaScript jsonwebtoken - use verify which returns decoded payload"
   },
   {
     "ruleId": "",
@@ -195,9 +195,9 @@
     "ruleId": "",
     "ruleTitle": "Prevent Code Injection",
     "type": "good",
-    "code": "eval(\"x = 1; x = x + 2\")\n\nblah = \"import requests; r = requests.get('https://example.com')\"\neval(blah)",
+    "code": "import ast\n\ndef safe_parse(user_expr):\n    # ast.literal_eval only allows literals (strings, numbers, tuples, lists, dicts, booleans, None)\n    return ast.literal_eval(user_expr)\n\n# For math expressions, use a purpose-built parser instead of eval",
     "language": "python",
-    "description": "Python - static eval with hardcoded strings"
+    "description": "Python - avoid eval entirely, use safe alternatives"
   },
   {
     "ruleId": "",
@@ -211,9 +211,9 @@
     "ruleId": "",
     "ruleTitle": "Prevent Code Injection",
     "type": "good",
-    "code": "eval('var x = \"static strings are okay\";');\n\nconst constVar = \"function staticStrings() { return 'static strings are okay';}\";\neval(constVar);",
+    "code": "// Instead of eval for JSON parsing:\nconst data = JSON.parse(jsonString);\n\n// Instead of eval for dynamic property access:\nconst value = obj[propertyName];\n\n// Instead of eval for math: use a sandboxed expression parser",
     "language": "javascript",
-    "description": "JavaScript - static eval strings"
+    "description": "JavaScript - avoid eval, use safe alternatives"
   },
   {
     "ruleId": "",
@@ -251,17 +251,17 @@
     "ruleId": "",
     "ruleTitle": "Prevent Code Injection",
     "type": "bad",
-    "code": "exec($user_input);\npassthru($user_input);\n$output = shell_exec($user_input);\n$output = system($user_input, $retval);\n\n$username = $_COOKIE['username'];\nexec(\"wto -n \\\"$username\\\" -g\", $ret);",
+    "code": "$code = $_GET['code'];\neval($code);\n\n$input = $_POST['input'];\nassert($input);  // assert() evaluates strings as code in PHP < 8.0",
     "language": "php",
-    "description": "PHP - dangerous exec functions with user input"
+    "description": "PHP - code injection via eval/assert"
   },
   {
     "ruleId": "",
     "ruleTitle": "Prevent Code Injection",
     "type": "good",
-    "code": "exec('whoami');\n\n$fullpath = $_POST['fullpath'];\n$filesize = trim(shell_exec('stat -c %s ' . escapeshellarg($fullpath)));",
+    "code": "// Instead of eval for dynamic config, use a data format:\n$config = json_decode(file_get_contents('config.json'), true);\n\n// Instead of eval for templates, use a template engine (Twig, Blade)",
     "language": "php",
-    "description": "PHP - static commands with escapeshellarg"
+    "description": "PHP - avoid eval, use structured alternatives"
   },
   {
     "ruleId": "",
@@ -386,6 +386,14 @@
   {
     "ruleId": "",
     "ruleTitle": "Code Correctness",
+    "type": "good",
+    "code": "try:\n    raise ValueError()\nfinally:\n    cleanup()  # Cleanup runs, exception still propagates",
+    "language": "python",
+    "description": "CORRECT - Let the exception propagate; use finally only for cleanup example for Code Correctness"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Code Correctness",
     "type": "bad",
     "code": "raise \"error\"",
     "language": "python",
@@ -458,6 +466,14 @@
   {
     "ruleId": "",
     "ruleTitle": "Code Correctness",
+    "type": "good",
+    "code": "parsed, err := strconv.ParseInt(\"2147483648\", 10, 32)\nif err != nil {\n    // handles out-of-range and invalid syntax\n    log.Fatal(err)\n}\nvalue := int32(parsed)",
+    "language": "go",
+    "description": "CORRECT example for Code Correctness"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Code Correctness",
     "type": "bad",
     "code": "if (a == \"hello\") return 1;",
     "language": "java",
@@ -499,7 +515,7 @@
     "ruleId": "",
     "ruleTitle": "Code Correctness",
     "type": "good",
-    "code": "long l = strtol(buf, NULL, 10);",
+    "code": "char *endptr;\nerrno = 0;\nlong l = strtol(buf, &endptr, 10);\nif (errno != 0 || endptr == buf || *endptr != '\\0') {\n    // handle conversion error\n}",
     "language": "c",
     "description": "CORRECT example for Code Correctness"
   },
@@ -555,17 +571,25 @@
     "ruleId": "",
     "ruleTitle": "Prevent Cross-Site Request Forgery",
     "type": "bad",
-    "code": "var express = require('express')\nvar bodyParser = require('body-parser')\n\nvar app = express()\n\napp.post('/process', bodyParser.urlencoded({ extended: false }), function(req, res) {\n    res.send('data is being processed')\n})",
+    "code": "const express = require('express')\nconst bodyParser = require('body-parser')\n\nconst app = express()\n\napp.post('/process', bodyParser.urlencoded({ extended: false }), function(req, res) {\n    res.send('data is being processed')\n})",
     "language": "javascript",
-    "description": "Express app without csurf middleware"
+    "description": "Express app without CSRF protection"
   },
   {
     "ruleId": "",
     "ruleTitle": "Prevent Cross-Site Request Forgery",
     "type": "good",
-    "code": "var csrf = require('csurf')\nvar express = require('express')\n\nvar app = express()\napp.use(csrf({ cookie: true }))",
+    "code": "const express = require('express')\nconst cookieParser = require('cookie-parser')\nconst { doubleCsrf } = require('csrf-csrf')\n\nconst { doubleCsrfProtection, generateToken } = doubleCsrf({\n  getSecret: () => process.env.CSRF_SECRET,\n  cookieName: '__Host-psifi.x-csrf-token',\n  cookieOptions: { sameSite: 'strict', secure: true },\n})\n\nconst app = express()\napp.use(cookieParser())\napp.use(doubleCsrfProtection)\n\n// Generate a token for forms/SPA clients\napp.get('/csrf-token', (req, res) => {\n  res.json({ token: generateToken(req, res) })\n})",
     "language": "javascript",
-    "description": "include csurf middleware"
+    "description": "Correct — Option A: csrf-csrf (Double-Submit Cookie pattern) example for Prevent Cross-Site Request Forgery"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prevent Cross-Site Request Forgery",
+    "type": "good",
+    "code": "const express = require('express')\nconst { csrfSync } = require('csrf-sync')\n\nconst { csrfSynchronisedProtection, generateToken } = csrfSync()\n\nconst app = express()\napp.use(csrfSynchronisedProtection)",
+    "language": "javascript",
+    "description": "Correct — Option B: csrf-sync (Synchronizer Token pattern) example for Prevent Cross-Site Request Forgery"
   },
   {
     "ruleId": "",
@@ -603,7 +627,7 @@
     "ruleId": "",
     "ruleTitle": "Secure Docker Configurations",
     "type": "bad",
-    "code": "FROM busybox\nRUN apt-get update && apt-get install -y some-package\nUSER appuser\nUSER root",
+    "code": "FROM debian:bookworm\nRUN apt-get update && apt-get install -y some-package\nUSER appuser\nUSER root",
     "language": "dockerfile",
     "description": "Incorrect example for Secure Docker Configurations"
   },
@@ -611,7 +635,7 @@
     "ruleId": "",
     "ruleTitle": "Secure Docker Configurations",
     "type": "good",
-    "code": "FROM busybox\nUSER root\nRUN apt-get update && apt-get install -y some-package\nUSER appuser",
+    "code": "FROM debian:bookworm\nUSER root\nRUN apt-get update && apt-get install -y some-package\nUSER appuser",
     "language": "dockerfile",
     "description": "Correct example for Secure Docker Configurations"
   },
@@ -675,9 +699,9 @@
     "ruleId": "",
     "ruleTitle": "Secure Docker Configurations",
     "type": "good",
-    "code": "version: \"3.9\"\nservices:\n  worker:\n    image: my-worker-image:1.0\n    volumes:\n      - /tmp/data:/tmp/data",
+    "code": "version: \"3.9\"\nservices:\n  worker:\n    image: my-worker-image:1.0\n    volumes:\n      - worker-data:/app/data\nvolumes:\n  worker-data:",
     "language": "yaml",
-    "description": "Correct example for Secure Docker Configurations"
+    "description": "use a named volume instead of host mounts"
   },
   {
     "ruleId": "",
@@ -803,9 +827,9 @@
     "ruleId": "",
     "ruleTitle": "Avoid Insecure Cryptography",
     "type": "good",
-    "code": "const crypto = require(\"crypto\");\n\nfunction hashPassword(pwtext) {\n    return crypto.createHash(\"sha256\").update(pwtext).digest(\"hex\");\n}",
+    "code": "const bcrypt = require(\"bcrypt\");\n\nasync function hashPassword(pwtext) {\n    return bcrypt.hash(pwtext, 12);\n}\n\nasync function verifyPassword(pwtext, hash) {\n    return bcrypt.compare(pwtext, hash);\n}",
     "language": "javascript",
-    "description": "SHA256 hashing"
+    "description": "bcrypt for password hashing"
   },
   {
     "ruleId": "",
@@ -819,15 +843,15 @@
     "ruleId": "",
     "ruleTitle": "Avoid Insecure Cryptography",
     "type": "good",
-    "code": "import java.security.MessageDigest;\n\nMessageDigest sha512 = MessageDigest.getInstance(\"SHA-512\");\nsha512.update(password.getBytes());\nbyte[] hash = sha512.digest();",
+    "code": "import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;\n\nBCryptPasswordEncoder encoder = new BCryptPasswordEncoder();\nString hash = encoder.encode(password);\nboolean matches = encoder.matches(password, hash);",
     "language": "java",
-    "description": "SHA-512 hashing"
+    "description": "BCrypt for password hashing"
   },
   {
     "ruleId": "",
     "ruleTitle": "Avoid Insecure Cryptography",
     "type": "bad",
-    "code": "Cipher c = Cipher.getInstance(\"DES/ECB/PKCS5Padding\");\nc.init(Cipher.ENCRYPT_MODE, k, iv);",
+    "code": "Cipher c = Cipher.getInstance(\"DES/ECB/PKCS5Padding\");\nc.init(Cipher.ENCRYPT_MODE, k);",
     "language": "java",
     "description": "DES cipher"
   },
@@ -1091,9 +1115,17 @@
     "ruleId": "",
     "ruleTitle": "Use Secure Transport",
     "type": "good",
-    "code": "new X509TrustManager() {\n    public X509Certificate[] getAcceptedIssuers() { return null; }\n    public void checkClientTrusted(X509Certificate[] certs, String authType) { }\n    public void checkServerTrusted(X509Certificate[] certs, String authType) {\n        try {\n            checkValidity();\n        } catch (Exception e) {\n            throw new CertificateException(\"Certificate not valid or trusted.\");\n        }\n    }\n}",
+    "code": "// HttpClient uses the JVM default SSLContext, which validates certificates properly\nHttpClient client = HttpClient.newBuilder().build();\n\nHttpRequest request = HttpRequest.newBuilder()\n    .uri(URI.create(\"https://example.com/\"))\n    .build();\n\nHttpResponse<String> response = client.send(request, BodyHandlers.ofString());",
     "language": "java",
-    "description": "proper certificate validation"
+    "description": "Correct — Option A: Use the JVM default trust manager (preferred) example for Use Secure Transport"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use Secure Transport",
+    "type": "good",
+    "code": "TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());\ntmf.init((KeyStore) null); // uses the JVM default trust store\n\nSSLContext sslContext = SSLContext.getInstance(\"TLS\");\nsslContext.init(null, tmf.getTrustManagers(), new SecureRandom());\n\n// Enable hostname verification\nSSLParameters sslParams = new SSLParameters();\nsslParams.setEndpointIdentificationAlgorithm(\"HTTPS\");\n\nHttpClient client = HttpClient.newBuilder()\n    .sslContext(sslContext)\n    .sslParameters(sslParams)\n    .build();",
+    "language": "java",
+    "description": "Correct — Option B: Explicit SSLContext with default TrustManagerFactory (when custom configuration is needed) example for Use Secure Transport"
   },
   {
     "ruleId": "",
@@ -1195,7 +1227,7 @@
     "ruleId": "",
     "ruleTitle": "Secure Kubernetes Configurations",
     "type": "bad",
-    "code": "apiVersion: v1\nkind: Pod\nspec:\n  containers:\n    - image: gcr.io/google_containers/test-webserver\n      name: test-container\n      volumeMounts:\n        - mountPath: /var/run/docker.sock\n          name: docker-sock-volume\n  volumes:\n    - name: docker-sock-volume\n      hostPath:\n        type: File\n        path: /var/run/docker.sock",
+    "code": "apiVersion: v1\nkind: Pod\nspec:\n  containers:\n    - image: gcr.io/google_containers/test-webserver\n      name: test-container\n      volumeMounts:\n        - mountPath: /var/run/docker.sock\n          name: docker-sock-volume\n  volumes:\n    - name: docker-sock-volume\n      hostPath:\n        type: Socket\n        path: /var/run/docker.sock",
     "language": "yaml",
     "description": "Incorrect example for Secure Kubernetes Configurations"
   },
@@ -1363,7 +1395,7 @@
     "ruleId": "",
     "ruleTitle": "Ensure Memory Safety",
     "type": "good",
-    "code": "void safe_code(char *user_input) {\n    char buffer[64];\n    strncpy(buffer, user_input, sizeof(buffer) - 1);\n    buffer[sizeof(buffer) - 1] = '\\0';  // Ensure null termination\n}",
+    "code": "void safe_code(char *user_input) {\n    char buffer[64];\n    snprintf(buffer, sizeof(buffer), \"%s\", user_input);  // Bounds-checked, always null-terminates\n}",
     "language": "c",
     "description": "Correct example for Ensure Memory Safety"
   },
@@ -1427,9 +1459,9 @@
     "ruleId": "",
     "ruleTitle": "Prevent Path Traversal",
     "type": "good",
-    "code": "const path = require('path');\n\nfunction getFileSafe(req, res) {\n  let somePath = req.body.path;\n  somePath = somePath.replace(/^(\\.\\.(\\/|\\\\|$))+/, '');\n  return path.join(opts.path, somePath);\n}",
+    "code": "const path = require('path');\n\nfunction getFileSafe(req, res) {\n  const baseDir = path.resolve(opts.path);\n  const resolved = path.resolve(baseDir, '.' + req.body.path);\n  if (!resolved.startsWith(baseDir + path.sep)) {\n    throw new Error('path traversal attempt');\n  }\n  return extractFile(resolved);\n}",
     "language": "javascript",
-    "description": "path sanitized"
+    "description": "resolve and enforce boundary"
   },
   {
     "ruleId": "",
@@ -1563,17 +1595,17 @@
     "ruleId": "",
     "ruleTitle": "Performance Best Practices",
     "type": "bad",
-    "code": "if (items.length === 0) { /* empty */ }",
+    "code": "for (const line of lines) {\n  const match = line.match(new RegExp('\\\\d{4}-\\\\d{2}-\\\\d{2}'));\n  if (match) results.push(match[0]);\n}",
     "language": "javascript",
-    "description": "INCORRECT - Inefficient length check example for Performance Best Practices"
+    "description": "INCORRECT - RegExp compiled on every iteration example for Performance Best Practices"
   },
   {
     "ruleId": "",
     "ruleTitle": "Performance Best Practices",
     "type": "good",
-    "code": "if (!items.length) { /* empty */ }",
+    "code": "const datePattern = /\\d{4}-\\d{2}-\\d{2}/;\nfor (const line of lines) {\n  const match = line.match(datePattern);\n  if (match) results.push(match[0]);\n}",
     "language": "javascript",
-    "description": "CORRECT - Direct comparison when possible example for Performance Best Practices"
+    "description": "CORRECT - Compile once, reuse in loop example for Performance Best Practices"
   },
   {
     "ruleId": "",
@@ -1603,9 +1635,9 @@
     "ruleId": "",
     "ruleTitle": "Prevent Prototype Pollution",
     "type": "good",
-    "code": "app.post('/test/:id', (req, res) => {\n    let id = req.params.id;\n    if (id !== 'constructor' && id !== '__proto__') {\n        let items = req.session.todos[id];\n        if (!items) {\n            items = req.session.todos[id] = {};\n        }\n        items[req.query.name] = req.query.text;\n    }\n    res.end(200);\n});",
+    "code": "const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);\n\napp.post('/test/:id', (req, res) => {\n    const id = req.params.id;\n    const name = req.query.name;\n\n    if (DANGEROUS_KEYS.has(id) || DANGEROUS_KEYS.has(name)) {\n        return res.status(400).end();\n    }\n\n    let items = req.session.todos[id];\n    if (!items) {\n        items = req.session.todos[id] = Object.create(null);\n    }\n    items[name] = req.query.text;\n    res.end(200);\n});",
     "language": "javascript",
-    "description": "JavaScript - validate against dangerous keys"
+    "description": "JavaScript - validate keys and use null-prototype objects"
   },
   {
     "ruleId": "",
@@ -1659,7 +1691,7 @@
     "ruleId": "",
     "ruleTitle": "Prevent Race Conditions",
     "type": "bad",
-    "code": "import tempfile as tf\n\n# ruleid: tempfile-insecure\nx = tempfile.mktemp()\n# ruleid: tempfile-insecure\nx = tempfile.mktemp(dir=\"/tmp\")",
+    "code": "import tempfile\n\n# ruleid: tempfile-insecure\nx = tempfile.mktemp()\n# ruleid: tempfile-insecure\nx = tempfile.mktemp(dir=\"/tmp\")",
     "language": "python",
     "description": "vulnerable to race condition"
   },
@@ -1667,7 +1699,7 @@
     "ruleId": "",
     "ruleTitle": "Prevent Race Conditions",
     "type": "good",
-    "code": "import tempfile\n\n# Use NamedTemporaryFile which atomically creates and opens the file\nwith tempfile.NamedTemporaryFile(mode='w', delete=False) as f:\n    f.write(\"data\")\n    filename = f.name\n\n# Or use mkstemp which returns both file descriptor and name\nfd, path = tempfile.mkstemp()\ntry:\n    with os.fdopen(fd, 'w') as f:\n        f.write(\"data\")\nfinally:\n    os.unlink(path)",
+    "code": "import os\nimport tempfile\n\n# Use NamedTemporaryFile which atomically creates and opens the file\nwith tempfile.NamedTemporaryFile(mode='w', delete=False) as f:\n    f.write(\"data\")\n    filename = f.name\n\n# Or use mkstemp which returns both file descriptor and name\nfd, path = tempfile.mkstemp()\ntry:\n    with os.fdopen(fd, 'w') as f:\n        f.write(\"data\")\nfinally:\n    os.unlink(path)",
     "language": "python",
     "description": "use secure alternatives"
   },
@@ -1699,9 +1731,9 @@
     "ruleId": "",
     "ruleTitle": "Prevent Race Conditions",
     "type": "good",
-    "code": "import \"os\"\n\nfunc secureTemp() error {\n    // Atomically creates a file with a random suffix\n    f, err := os.CreateTemp(\"\", \"prefix-*.txt\")\n    if err != nil {\n        return err\n    }\n    defer f.Close()\n\n    _, err = f.WriteString(\"secure data\")\n    return err\n}",
+    "code": "import \"os\"\n\nfunc main_good() {\n\t// ok:bad-tmp-file-creation\n\tf, err := os.CreateTemp(\"\", \"my_temp-*.txt\")\n\tif err != nil {\n\t\tfmt.Println(\"Error while creating temp file!\")\n\t\treturn\n\t}\n\tdefer f.Close()\n\n\t_, err = f.WriteString(\"secure data\")\n\tif err != nil {\n\t\tfmt.Println(\"Error while writing!\")\n\t}\n}",
     "language": "go",
-    "description": "use TempFile for atomic creation"
+    "description": "use os.CreateTemp for atomic creation"
   },
   {
     "ruleId": "",
@@ -2131,17 +2163,17 @@
     "ruleId": "",
     "ruleTitle": "Secure AWS Terraform Configurations",
     "type": "bad",
-    "code": "resource \"aws_s3_bucket_object\" \"fail\" {\n  bucket  = aws_s3_bucket.bucket.bucket\n  key     = \"my-object\"\n  content = \"data\"\n}",
+    "code": "resource \"aws_s3_bucket\" \"bucket\" {\n  bucket = \"my-bucket\"\n}",
     "language": "hcl",
-    "description": "Incorrect example for Secure AWS Terraform Configurations"
+    "description": "bucket without server-side encryption"
   },
   {
     "ruleId": "",
     "ruleTitle": "Secure AWS Terraform Configurations",
     "type": "good",
-    "code": "resource \"aws_s3_bucket_object\" \"pass\" {\n  bucket     = aws_s3_bucket.bucket.bucket\n  key        = \"my-object\"\n  content    = \"data\"\n  kms_key_id = aws_kms_key.example.arn\n}",
+    "code": "resource \"aws_s3_bucket\" \"bucket\" {\n  bucket = \"my-bucket\"\n}\n\nresource \"aws_s3_bucket_server_side_encryption_configuration\" \"pass\" {\n  bucket = aws_s3_bucket.bucket.id\n\n  rule {\n    apply_server_side_encryption_by_default {\n      sse_algorithm     = \"aws:kms\"\n      kms_master_key_id = aws_kms_key.example.arn\n    }\n    bucket_key_enabled = true\n  }\n}",
     "language": "hcl",
-    "description": "Correct example for Secure AWS Terraform Configurations"
+    "description": "bucket-level KMS encryption via aws_s3_bucket_server_side_encryption_configuration"
   },
   {
     "ruleId": "",
@@ -2323,7 +2355,7 @@
     "ruleId": "",
     "ruleTitle": "Secure Azure Terraform Configurations",
     "type": "bad",
-    "code": "resource \"azurerm_storage_account\" \"bad\" {\n  name                      = \"storageaccountname\"\n  resource_group_name       = azurerm_resource_group.example.name\n  location                  = azurerm_resource_group.example.location\n  min_tls_version           = \"TLS1_0\"\n  enable_https_traffic_only = false\n}\n\nresource \"azurerm_storage_container\" \"bad\" {\n  name                  = \"vhds\"\n  storage_account_name  = azurerm_storage_account.example.name\n  container_access_type = \"blob\"\n}",
+    "code": "resource \"azurerm_storage_account\" \"bad\" {\n  name                      = \"storageaccountname\"\n  resource_group_name       = azurerm_resource_group.example.name\n  location                  = azurerm_resource_group.example.location\n  min_tls_version           = \"TLS1_0\"\n  allow_nested_items_to_be_public = true\n}\n\nresource \"azurerm_storage_container\" \"bad\" {\n  name                  = \"vhds\"\n  storage_account_name  = azurerm_storage_account.example.name\n  container_access_type = \"blob\"\n}",
     "language": "hcl",
     "description": "Incorrect example for Secure Azure Terraform Configurations"
   },
@@ -2331,7 +2363,7 @@
     "ruleId": "",
     "ruleTitle": "Secure Azure Terraform Configurations",
     "type": "good",
-    "code": "resource \"azurerm_storage_account\" \"good\" {\n  name                      = \"storageaccountname\"\n  resource_group_name       = azurerm_resource_group.example.name\n  location                  = azurerm_resource_group.example.location\n  min_tls_version           = \"TLS1_2\"\n  enable_https_traffic_only = true\n  network_rules {\n    default_action             = \"Deny\"\n    ip_rules                   = [\"100.0.0.1\"]\n    virtual_network_subnet_ids = [azurerm_subnet.example.id]\n    bypass                     = [\"Metrics\", \"AzureServices\"]\n  }\n}\n\nresource \"azurerm_storage_container\" \"good\" {\n  name                  = \"vhds\"\n  storage_account_name  = azurerm_storage_account.example.name\n  container_access_type = \"private\"\n}",
+    "code": "resource \"azurerm_storage_account\" \"good\" {\n  name                      = \"storageaccountname\"\n  resource_group_name       = azurerm_resource_group.example.name\n  location                  = azurerm_resource_group.example.location\n  min_tls_version           = \"TLS1_2\"\n  allow_nested_items_to_be_public = false\n  network_rules {\n    default_action             = \"Deny\"\n    ip_rules                   = [\"100.0.0.1\"]\n    virtual_network_subnet_ids = [azurerm_subnet.example.id]\n    bypass                     = [\"Metrics\", \"AzureServices\"]\n  }\n}\n\nresource \"azurerm_storage_container\" \"good\" {\n  name                  = \"vhds\"\n  storage_account_name  = azurerm_storage_account.example.name\n  container_access_type = \"private\"\n}",
     "language": "hcl",
     "description": "Correct example for Secure Azure Terraform Configurations"
   },
@@ -2339,7 +2371,7 @@
     "ruleId": "",
     "ruleTitle": "Secure Azure Terraform Configurations",
     "type": "bad",
-    "code": "resource \"azurerm_app_service\" \"bad\" {\n  name                     = \"example-app-service\"\n  location                 = azurerm_resource_group.example.location\n  resource_group_name      = azurerm_resource_group.example.name\n  app_service_plan_id      = azurerm_app_service_plan.example.id\n  https_only               = false\n  remote_debugging_enabled = true\n  site_config {\n    min_tls_version = \"1.0\"\n    cors { allowed_origins = [\"*\"] }\n  }\n  auth_settings { enabled = false }\n}",
+    "code": "resource \"azurerm_linux_web_app\" \"bad\" {\n  name                = \"example-app-service\"\n  location            = azurerm_resource_group.example.location\n  resource_group_name = azurerm_resource_group.example.name\n  service_plan_id     = azurerm_service_plan.example.id\n  https_only          = false\n  site_config {\n    remote_debugging_enabled = true\n    minimum_tls_version      = \"1.0\"\n    cors { allowed_origins = [\"*\"] }\n  }\n  auth_settings { enabled = false }\n}",
     "language": "hcl",
     "description": "Incorrect example for Secure Azure Terraform Configurations"
   },
@@ -2347,7 +2379,7 @@
     "ruleId": "",
     "ruleTitle": "Secure Azure Terraform Configurations",
     "type": "good",
-    "code": "resource \"azurerm_app_service\" \"good\" {\n  name                     = \"example-app-service\"\n  location                 = azurerm_resource_group.example.location\n  resource_group_name      = azurerm_resource_group.example.name\n  app_service_plan_id      = azurerm_app_service_plan.example.id\n  https_only               = true\n  remote_debugging_enabled = false\n  site_config {\n    min_tls_version = \"1.2\"\n    cors { allowed_origins = [\"https://example.com\"] }\n  }\n  auth_settings { enabled = true }\n}",
+    "code": "resource \"azurerm_linux_web_app\" \"good\" {\n  name                = \"example-app-service\"\n  location            = azurerm_resource_group.example.location\n  resource_group_name = azurerm_resource_group.example.name\n  service_plan_id     = azurerm_service_plan.example.id\n  https_only          = true\n  site_config {\n    remote_debugging_enabled = false\n    minimum_tls_version      = \"1.2\"\n    cors { allowed_origins = [\"https://example.com\"] }\n  }\n  auth_settings { enabled = true }\n}",
     "language": "hcl",
     "description": "Correct example for Secure Azure Terraform Configurations"
   },
@@ -2363,7 +2395,7 @@
     "ruleId": "",
     "ruleTitle": "Secure Azure Terraform Configurations",
     "type": "good",
-    "code": "resource \"azurerm_key_vault\" \"good\" {\n  name                       = \"examplekeyvault\"\n  location                   = azurerm_resource_group.example.location\n  soft_delete_retention_days = 7\n  purge_protection_enabled   = true\n  network_acls { bypass = \"AzureServices\"; default_action = \"Deny\" }\n}\n\nresource \"azurerm_key_vault_key\" \"good\" {\n  name            = \"mykey\"\n  key_vault_id    = azurerm_key_vault.example.id\n  key_type        = \"RSA\"\n  key_size        = 2048\n  expiration_date = \"2025-12-31T00:00:00Z\"\n  key_opts        = [\"decrypt\", \"encrypt\", \"sign\", \"unwrapKey\", \"verify\", \"wrapKey\"]\n}",
+    "code": "resource \"azurerm_key_vault\" \"good\" {\n  name                       = \"examplekeyvault\"\n  location                   = azurerm_resource_group.example.location\n  soft_delete_retention_days = 7\n  purge_protection_enabled   = true\n  network_acls { bypass = \"AzureServices\"; default_action = \"Deny\" }\n}\n\nresource \"azurerm_key_vault_key\" \"good\" {\n  name            = \"mykey\"\n  key_vault_id    = azurerm_key_vault.example.id\n  key_type        = \"RSA\"\n  key_size        = 2048\n  expiration_date = \"2027-12-31T00:00:00Z\"\n  key_opts        = [\"decrypt\", \"encrypt\", \"sign\", \"unwrapKey\", \"verify\", \"wrapKey\"]\n}",
     "language": "hcl",
     "description": "Correct example for Secure Azure Terraform Configurations"
   },
@@ -2395,7 +2427,7 @@
     "ruleId": "",
     "ruleTitle": "Secure Azure Terraform Configurations",
     "type": "good",
-    "code": "resource \"azurerm_kubernetes_cluster\" \"good\" {\n  name                            = \"example-aks1\"\n  location                        = azurerm_resource_group.example.location\n  resource_group_name             = azurerm_resource_group.example.name\n  dns_prefix                      = \"exampleaks1\"\n  private_cluster_enabled         = true\n  disk_encryption_set_id          = azurerm_disk_encryption_set.example.id\n  api_server_authorized_ip_ranges = [\"192.168.0.0/16\"]\n  default_node_pool { name = \"default\"; node_count = 1; vm_size = \"Standard_D2_v2\" }\n  identity { type = \"SystemAssigned\" }\n}",
+    "code": "resource \"azurerm_kubernetes_cluster\" \"good\" {\n  name                            = \"example-aks1\"\n  location                        = azurerm_resource_group.example.location\n  resource_group_name             = azurerm_resource_group.example.name\n  dns_prefix                      = \"exampleaks1\"\n  private_cluster_enabled = true\n  disk_encryption_set_id  = azurerm_disk_encryption_set.example.id\n  default_node_pool { name = \"default\"; node_count = 1; vm_size = \"Standard_D2_v2\" }\n  identity { type = \"SystemAssigned\" }\n}",
     "language": "hcl",
     "description": "Correct example for Secure Azure Terraform Configurations"
   },
@@ -2427,7 +2459,7 @@
     "ruleId": "",
     "ruleTitle": "Secure Azure Terraform Configurations",
     "type": "good",
-    "code": "resource \"azurerm_cosmosdb_account\" \"good\" {\n  name                          = \"tfex-cosmos-db\"\n  location                      = azurerm_resource_group.example.location\n  resource_group_name           = azurerm_resource_group.example.name\n  offer_type                    = \"Standard\"\n  kind                          = \"GlobalDocumentDB\"\n  public_network_access_enabled = false\n  key_vault_key_id              = azurerm_key_vault_key.example.versionless_id\n}\n\nresource \"azurerm_container_group\" \"good\" {\n  name                = \"example-continst\"\n  location            = azurerm_resource_group.example.location\n  resource_group_name = azurerm_resource_group.example.name\n  ip_address_type     = \"private\"\n  os_type             = \"Linux\"\n  network_profile_id  = azurerm_network_profile.example.id\n  container { name = \"hello-world\"; image = \"microsoft/aci-helloworld:latest\"; cpu = \"0.5\"; memory = \"1.5\" }\n}",
+    "code": "resource \"azurerm_cosmosdb_account\" \"good\" {\n  name                          = \"tfex-cosmos-db\"\n  location                      = azurerm_resource_group.example.location\n  resource_group_name           = azurerm_resource_group.example.name\n  offer_type                    = \"Standard\"\n  kind                          = \"GlobalDocumentDB\"\n  public_network_access_enabled = false\n  key_vault_key_id              = azurerm_key_vault_key.example.versionless_id\n}\n\nresource \"azurerm_container_group\" \"good\" {\n  name                = \"example-continst\"\n  location            = azurerm_resource_group.example.location\n  resource_group_name = azurerm_resource_group.example.name\n  ip_address_type     = \"private\"\n  os_type             = \"Linux\"\n  subnet_ids          = [azurerm_subnet.example.id]\n  container { name = \"hello-world\"; image = \"microsoft/aci-helloworld:latest\"; cpu = \"0.5\"; memory = \"1.5\" }\n}",
     "language": "hcl",
     "description": "Correct example for Secure Azure Terraform Configurations"
   },
@@ -2451,7 +2483,7 @@
     "ruleId": "",
     "ruleTitle": "Secure GCP Terraform Configurations",
     "type": "bad",
-    "code": "resource \"google_storage_bucket\" \"insecure\" {\n  name     = \"example\"\n  location = \"EU\"\n  uniform_bucket_level_access = false\n}\nresource \"google_storage_bucket_iam_member\" \"public\" {\n  bucket = google_storage_bucket.default.name\n  role   = \"roles/storage.admin\"\n  member = \"allUsers\"\n}",
+    "code": "resource \"google_storage_bucket\" \"insecure\" {\n  name     = \"example\"\n  location = \"EU\"\n  uniform_bucket_level_access = false\n}\nresource \"google_storage_bucket_iam_member\" \"public\" {\n  bucket = google_storage_bucket.insecure.name\n  role   = \"roles/storage.admin\"\n  member = \"allUsers\"\n}",
     "language": "hcl",
     "description": "Incorrect example for Secure GCP Terraform Configurations"
   },
@@ -2459,7 +2491,7 @@
     "ruleId": "",
     "ruleTitle": "Secure GCP Terraform Configurations",
     "type": "good",
-    "code": "resource \"google_storage_bucket\" \"secure\" {\n  name     = \"example\"\n  location = \"EU\"\n  uniform_bucket_level_access = true\n  versioning { enabled = true }\n  logging { log_bucket = \"my-logging-bucket\" }\n}\nresource \"google_storage_bucket_iam_member\" \"restricted\" {\n  bucket = google_storage_bucket.default.name\n  role   = \"roles/storage.admin\"\n  member = \"user:jane@example.com\"\n}",
+    "code": "resource \"google_storage_bucket\" \"secure\" {\n  name     = \"example\"\n  location = \"EU\"\n  uniform_bucket_level_access = true\n  versioning { enabled = true }\n  logging { log_bucket = \"my-logging-bucket\" }\n}\nresource \"google_storage_bucket_iam_member\" \"restricted\" {\n  bucket = google_storage_bucket.secure.name\n  role   = \"roles/storage.admin\"\n  member = \"user:jane@example.com\"\n}",
     "language": "hcl",
     "description": "Correct example for Secure GCP Terraform Configurations"
   },
@@ -2467,7 +2499,7 @@
     "ruleId": "",
     "ruleTitle": "Secure GCP Terraform Configurations",
     "type": "bad",
-    "code": "resource \"google_compute_instance\" \"insecure\" {\n  name = \"test\"; machine_type = \"n1-standard-1\"; zone = \"us-central1-a\"\n  can_ip_forward = true; boot_disk {}\n  metadata = { serial-port-enable = true, enable-oslogin = false }\n  network_interface { network = \"default\"; access_config {} }\n}\nresource \"google_compute_firewall\" \"open\" {\n  name = \"allow-all\"; network = \"google_compute_network.vpc.name\"\n  allow { protocol = \"tcp\"; ports = [22, 3389] }\n  source_ranges = [\"0.0.0.0/0\"]\n}",
+    "code": "resource \"google_compute_instance\" \"insecure\" {\n  name = \"test\"; machine_type = \"n1-standard-1\"; zone = \"us-central1-a\"\n  can_ip_forward = true; boot_disk {}\n  metadata = { serial-port-enable = true, enable-oslogin = false }\n  network_interface { network = \"default\"; access_config {} }\n}\nresource \"google_compute_firewall\" \"open\" {\n  name = \"allow-all\"; network = google_compute_network.vpc.name\n  allow { protocol = \"tcp\"; ports = [22, 3389] }\n  source_ranges = [\"0.0.0.0/0\"]\n}",
     "language": "hcl",
     "description": "Incorrect example for Secure GCP Terraform Configurations"
   },
@@ -2475,7 +2507,7 @@
     "ruleId": "",
     "ruleTitle": "Secure GCP Terraform Configurations",
     "type": "good",
-    "code": "resource \"google_compute_instance\" \"secure\" {\n  name = \"test\"; machine_type = \"n1-standard-1\"; zone = \"us-central1-a\"\n  can_ip_forward = false\n  boot_disk { kms_key_self_link = google_kms_crypto_key.key.id }\n  metadata = { enable-oslogin = true }\n  network_interface { network = \"default\" }\n  shielded_instance_config { enable_vtpm = true; enable_integrity_monitoring = true }\n}\nresource \"google_compute_firewall\" \"restricted\" {\n  name = \"allow-ssh\"; network = \"google_compute_network.vpc.name\"\n  allow { protocol = \"tcp\"; ports = [\"22\"] }\n  source_ranges = [\"172.1.2.3/32\"]; target_tags = [\"ssh\"]\n}",
+    "code": "resource \"google_compute_instance\" \"secure\" {\n  name = \"test\"; machine_type = \"n1-standard-1\"; zone = \"us-central1-a\"\n  can_ip_forward = false\n  boot_disk { kms_key_self_link = google_kms_crypto_key.key.id }\n  metadata = { enable-oslogin = true }\n  network_interface { network = \"default\" }\n  shielded_instance_config { enable_vtpm = true; enable_integrity_monitoring = true }\n}\nresource \"google_compute_firewall\" \"restricted\" {\n  name = \"allow-ssh\"; network = google_compute_network.vpc.name\n  allow { protocol = \"tcp\"; ports = [\"22\"] }\n  source_ranges = [\"172.1.2.3/32\"]; target_tags = [\"ssh\"]\n}",
     "language": "hcl",
     "description": "Correct example for Secure GCP Terraform Configurations"
   },
@@ -2515,7 +2547,7 @@
     "ruleId": "",
     "ruleTitle": "Secure GCP Terraform Configurations",
     "type": "bad",
-    "code": "resource \"google_project_iam_member\" \"dangerous\" {\n  project = \"your-project-id\"; role = \"roles/iam.serviceAccountTokenCreator\"\n  member  = \"serviceAccount:test-compute@developer.gserviceaccount.com\"\n}\nresource \"google_compute_subnetwork\" \"no_logs\" {\n  name = \"example\"; ip_cidr_range = \"10.0.0.0/16\"; network = \"google_compute_network.vpc.id\"\n}\nresource \"google_project\" \"default_network\" {\n  name = \"My Project\"; project_id = \"your-project-id\"; org_id = \"1234567\"\n}",
+    "code": "resource \"google_project_iam_member\" \"dangerous\" {\n  project = \"your-project-id\"; role = \"roles/iam.serviceAccountTokenCreator\"\n  member  = \"serviceAccount:test-compute@developer.gserviceaccount.com\"\n}\nresource \"google_compute_subnetwork\" \"no_logs\" {\n  name = \"example\"; ip_cidr_range = \"10.0.0.0/16\"; network = google_compute_network.vpc.id\n}\nresource \"google_project\" \"default_network\" {\n  name = \"My Project\"; project_id = \"your-project-id\"; org_id = \"1234567\"\n}",
     "language": "hcl",
     "description": "Incorrect example for Secure GCP Terraform Configurations"
   },
@@ -2523,7 +2555,7 @@
     "ruleId": "",
     "ruleTitle": "Secure GCP Terraform Configurations",
     "type": "good",
-    "code": "resource \"google_project_iam_member\" \"safe\" {\n  project = \"your-project-id\"; role = \"roles/viewer\"; member = \"user:jane@example.com\"\n}\nresource \"google_compute_subnetwork\" \"with_logs\" {\n  name = \"example\"; ip_cidr_range = \"10.0.0.0/16\"; network = \"google_compute_network.vpc.self_link\"\n  log_config { aggregation_interval = \"INTERVAL_10_MIN\"; flow_sampling = 0.5 }\n}\nresource \"google_project\" \"no_default_network\" {\n  name = \"My Project\"; project_id = \"your-project-id\"; org_id = \"1234567\"; auto_create_network = false\n}",
+    "code": "resource \"google_project_iam_member\" \"safe\" {\n  project = \"your-project-id\"; role = \"roles/viewer\"; member = \"user:jane@example.com\"\n}\nresource \"google_compute_subnetwork\" \"with_logs\" {\n  name = \"example\"; ip_cidr_range = \"10.0.0.0/16\"; network = google_compute_network.vpc.self_link\n  log_config { aggregation_interval = \"INTERVAL_10_MIN\"; flow_sampling = 0.5 }\n}\nresource \"google_project\" \"no_default_network\" {\n  name = \"My Project\"; project_id = \"your-project-id\"; org_id = \"1234567\"; auto_create_network = false\n}",
     "language": "hcl",
     "description": "Correct example for Secure GCP Terraform Configurations"
   },
@@ -2707,17 +2739,25 @@
     "ruleId": "",
     "ruleTitle": "Avoid Unsafe Functions",
     "type": "bad",
-    "code": "// ruleid: unsafe-usage\nlet pid = unsafe { libc::getpid() as u32 };",
+    "code": "// ruleid: unsafe-usage\n// This will not compile — libc::getpid() is an extern \"C\" function and requires unsafe\nlet pid = libc::getpid() as u32;",
     "language": "rust",
-    "description": "Rust - unsafe block bypasses safety"
+    "description": "Rust - calling C FFI without unsafe block"
   },
   {
     "ruleId": "",
     "ruleTitle": "Avoid Unsafe Functions",
     "type": "good",
-    "code": "// ok: unsafe-usage\nlet pid = libc::getpid() as u32;",
+    "code": "// ok: unsafe-usage\n// std::process::id() is a safe wrapper that returns the OS-assigned PID\nlet pid: u32 = std::process::id();",
     "language": "rust",
-    "description": "Rust - use safe alternatives"
+    "description": "Correct — Option A (Rust - use safe standard library alternative, preferred) example for Avoid Unsafe Functions"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Avoid Unsafe Functions",
+    "type": "good",
+    "code": "// ok: unsafe-usage\n// SAFETY: libc::getpid() is a read-only syscall with no preconditions\nlet pid = unsafe { libc::getpid() } as u32;",
+    "language": "rust",
+    "description": "Correct — Option B (Rust - minimally scoped unsafe block with SAFETY comment) example for Avoid Unsafe Functions"
   },
   {
     "ruleId": "",
@@ -2859,7 +2899,7 @@
     "ruleId": "",
     "ruleTitle": "Prevent XML External Entity (XXE) Injection",
     "type": "good",
-    "code": "def parse_xml():\n    from defusedxml.etree import ElementTree\n    tree = ElementTree.parse('data.xml')\n    root = tree.getroot()",
+    "code": "def parse_xml():\n    import defusedxml.ElementTree as ElementTree\n    tree = ElementTree.parse('data.xml')\n    root = tree.getroot()",
     "language": "python",
     "description": "safe usage"
   },

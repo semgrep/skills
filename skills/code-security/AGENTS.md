@@ -633,7 +633,7 @@ def parse_xml():
 
 ```python
 def parse_xml():
-    from defusedxml.etree import ElementTree
+    import defusedxml.ElementTree as ElementTree
     tree = ElementTree.parse('data.xml')
     root = tree.getroot()
 ```
@@ -811,15 +811,18 @@ function getFile(entry) {
 }
 ```
 
-**Correct: path sanitized**
+**Correct: resolve and enforce boundary**
 
 ```javascript
 const path = require('path');
 
 function getFileSafe(req, res) {
-  let somePath = req.body.path;
-  somePath = somePath.replace(/^(\.\.(\/|\\|$))+/, '');
-  return path.join(opts.path, somePath);
+  const baseDir = path.resolve(opts.path);
+  const resolved = path.resolve(baseDir, '.' + req.body.path);
+  if (!resolved.startsWith(baseDir + path.sep)) {
+    throw new Error('path traversal attempt');
+  }
+  return extractFile(resolved);
 }
 ```
 
@@ -1138,13 +1141,16 @@ def unsafe(request):
     eval(code)
 ```
 
-**Correct: Python - static eval with hardcoded strings**
+**Correct: Python - avoid eval entirely, use safe alternatives**
 
 ```python
-eval("x = 1; x = x + 2")
+import ast
 
-blah = "import requests; r = requests.get('https://example.com')"
-eval(blah)
+def safe_parse(user_expr):
+    # ast.literal_eval only allows literals (strings, numbers, tuples, lists, dicts, booleans, None)
+    return ast.literal_eval(user_expr)
+
+# For math expressions, use a purpose-built parser instead of eval
 ```
 
 **Incorrect: JavaScript - eval with dynamic content**
@@ -1159,13 +1165,16 @@ function evalSomething(something) {
 }
 ```
 
-**Correct: JavaScript - static eval strings**
+**Correct: JavaScript - avoid eval, use safe alternatives**
 
 ```javascript
-eval('var x = "static strings are okay";');
+// Instead of eval for JSON parsing:
+const data = JSON.parse(jsonString);
 
-const constVar = "function staticStrings() { return 'static strings are okay';}";
-eval(constVar);
+// Instead of eval for dynamic property access:
+const value = obj[propertyName];
+
+// Instead of eval for math: use a sandboxed expression parser
 ```
 
 **Incorrect: Java - ScriptEngine injection**
@@ -1215,25 +1224,23 @@ a = %q{def hello() "Hello there!" end}
 Thing.module_eval(a)
 ```
 
-**Incorrect: PHP - dangerous exec functions with user input**
+**Incorrect: PHP - code injection via eval/assert**
 
 ```php
-exec($user_input);
-passthru($user_input);
-$output = shell_exec($user_input);
-$output = system($user_input, $retval);
+$code = $_GET['code'];
+eval($code);
 
-$username = $_COOKIE['username'];
-exec("wto -n \"$username\" -g", $ret);
+$input = $_POST['input'];
+assert($input);  // assert() evaluates strings as code in PHP < 8.0
 ```
 
-**Correct: PHP - static commands with escapeshellarg**
+**Correct: PHP - avoid eval, use structured alternatives**
 
 ```php
-exec('whoami');
+// Instead of eval for dynamic config, use a data format:
+$config = json_decode(file_get_contents('config.json'), true);
 
-$fullpath = $_POST['fullpath'];
-$filesize = trim(shell_exec('stat -c %s ' . escapeshellarg($fullpath)));
+// Instead of eval for templates, use a template engine (Twig, Blade)
 ```
 
 ---
@@ -1495,8 +1502,7 @@ void bad_code(char *user_input) {
 ```c
 void safe_code(char *user_input) {
     char buffer[64];
-    strncpy(buffer, user_input, sizeof(buffer) - 1);
-    buffer[sizeof(buffer) - 1] = '\0';  // Ensure null termination
+    snprintf(buffer, sizeof(buffer), "%s", user_input);  // Bounds-checked, always null-terminates
 }
 ```
 
@@ -1579,13 +1585,17 @@ function hashPassword(pwtext) {
 }
 ```
 
-**Correct: SHA256 hashing**
+**Correct: bcrypt for password hashing**
 
 ```javascript
-const crypto = require("crypto");
+const bcrypt = require("bcrypt");
 
-function hashPassword(pwtext) {
-    return crypto.createHash("sha256").update(pwtext).digest("hex");
+async function hashPassword(pwtext) {
+    return bcrypt.hash(pwtext, 12);
+}
+
+async function verifyPassword(pwtext, hash) {
+    return bcrypt.compare(pwtext, hash);
 }
 ```
 
@@ -1601,21 +1611,21 @@ byte[] hash = md5.digest();
 MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
 ```
 
-**Correct: SHA-512 hashing**
+**Correct: BCrypt for password hashing**
 
 ```java
-import java.security.MessageDigest;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-MessageDigest sha512 = MessageDigest.getInstance("SHA-512");
-sha512.update(password.getBytes());
-byte[] hash = sha512.digest();
+BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+String hash = encoder.encode(password);
+boolean matches = encoder.matches(password, hash);
 ```
 
 **Incorrect: DES cipher**
 
 ```java
 Cipher c = Cipher.getInstance("DES/ECB/PKCS5Padding");
-c.init(Cipher.ENCRYPT_MODE, k, iv);
+c.init(Cipher.ENCRYPT_MODE, k);
 ```
 
 **Correct: AES with GCM**
@@ -1866,23 +1876,41 @@ new X509TrustManager() {
 }
 ```
 
-**Correct: proper certificate validation**
+**Correct — Option A: Use the JVM default trust manager (preferred):**
 
 ```java
-new X509TrustManager() {
-    public X509Certificate[] getAcceptedIssuers() { return null; }
-    public void checkClientTrusted(X509Certificate[] certs, String authType) { }
-    public void checkServerTrusted(X509Certificate[] certs, String authType) {
-        try {
-            checkValidity();
-        } catch (Exception e) {
-            throw new CertificateException("Certificate not valid or trusted.");
-        }
-    }
-}
+// HttpClient uses the JVM default SSLContext, which validates certificates properly
+HttpClient client = HttpClient.newBuilder().build();
+
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("https://example.com/"))
+    .build();
+
+HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
 ```
 
-Reference: [https://nodejs.org/api/https.html](https://nodejs.org/api/https.html), [https://golang.org/pkg/crypto/tls/](https://golang.org/pkg/crypto/tls/), [https://docs.python.org/3/library/ssl.html](https://docs.python.org/3/library/ssl.html), [https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html](https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html)
+**Correct — Option B: Explicit SSLContext with default TrustManagerFactory (when custom configuration is needed):**
+
+```java
+TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+tmf.init((KeyStore) null); // uses the JVM default trust store
+
+SSLContext sslContext = SSLContext.getInstance("TLS");
+sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
+
+// Enable hostname verification
+SSLParameters sslParams = new SSLParameters();
+sslParams.setEndpointIdentificationAlgorithm("HTTPS");
+
+HttpClient client = HttpClient.newBuilder()
+    .sslContext(sslContext)
+    .sslParameters(sslParams)
+    .build();
+```
+
+**References:**
+
+Reference: [https://nodejs.org/api/https.html](https://nodejs.org/api/https.html), [https://golang.org/pkg/crypto/tls/](https://golang.org/pkg/crypto/tls/), [https://docs.python.org/3/library/ssl.html](https://docs.python.org/3/library/ssl.html)
 
 ---
 
@@ -2108,14 +2136,13 @@ function getUserData(token) {
 }
 ```
 
-**Correct: JavaScript jsonwebtoken - verify before decode**
+**Correct: JavaScript jsonwebtoken - use verify which returns decoded payload**
 
 ```javascript
 const jwt = require('jsonwebtoken');
 
 function getUserData(token, secretKey) {
-  jwt.verify(token, secretKey);
-  const decoded = jwt.decode(token, true);
+  const decoded = jwt.verify(token, secretKey);
   if (decoded.isAdmin) {
     return getAdminData();
   }
@@ -2214,28 +2241,55 @@ def my_view(request):
 
 **References:**
 
-**Incorrect: Express app without csurf middleware**
+**Incorrect: Express app without CSRF protection**
 
 ```javascript
-var express = require('express')
-var bodyParser = require('body-parser')
+const express = require('express')
+const bodyParser = require('body-parser')
 
-var app = express()
+const app = express()
 
 app.post('/process', bodyParser.urlencoded({ extended: false }), function(req, res) {
     res.send('data is being processed')
 })
 ```
 
-**Correct: include csurf middleware**
+**Correct — Option A: csrf-csrf (Double-Submit Cookie pattern):**
 
 ```javascript
-var csrf = require('csurf')
-var express = require('express')
+const express = require('express')
+const cookieParser = require('cookie-parser')
+const { doubleCsrf } = require('csrf-csrf')
 
-var app = express()
-app.use(csrf({ cookie: true }))
+const { doubleCsrfProtection, generateToken } = doubleCsrf({
+  getSecret: () => process.env.CSRF_SECRET,
+  cookieName: '__Host-psifi.x-csrf-token',
+  cookieOptions: { sameSite: 'strict', secure: true },
+})
+
+const app = express()
+app.use(cookieParser())
+app.use(doubleCsrfProtection)
+
+// Generate a token for forms/SPA clients
+app.get('/csrf-token', (req, res) => {
+  res.json({ token: generateToken(req, res) })
+})
 ```
+
+**Correct — Option B: csrf-sync (Synchronizer Token pattern):**
+
+```javascript
+const express = require('express')
+const { csrfSync } = require('csrf-sync')
+
+const { csrfSynchronisedProtection, generateToken } = csrfSync()
+
+const app = express()
+app.use(csrfSynchronisedProtection)
+```
+
+**Additional defenses: complement token-based CSRF protection**
 
 **References:**
 
@@ -2326,18 +2380,24 @@ app.get('/test/:id', (req, res) => {
 });
 ```
 
-**Correct: JavaScript - validate against dangerous keys**
+**Correct: JavaScript - validate keys and use null-prototype objects**
 
 ```javascript
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 app.post('/test/:id', (req, res) => {
-    let id = req.params.id;
-    if (id !== 'constructor' && id !== '__proto__') {
-        let items = req.session.todos[id];
-        if (!items) {
-            items = req.session.todos[id] = {};
-        }
-        items[req.query.name] = req.query.text;
+    const id = req.params.id;
+    const name = req.query.name;
+
+    if (DANGEROUS_KEYS.has(id) || DANGEROUS_KEYS.has(name)) {
+        return res.status(400).end();
     }
+
+    let items = req.session.todos[id];
+    if (!items) {
+        items = req.session.todos[id] = Object.create(null);
+    }
+    items[name] = req.query.text;
     res.end(200);
 });
 ```
@@ -2610,18 +2670,28 @@ func main() {
 // Avoid using the unsafe package. Use Go's type-safe alternatives for memory operations.
 ```
 
-**Incorrect: Rust - unsafe block bypasses safety**
+**Incorrect: Rust - calling C FFI without unsafe block**
 
 ```rust
 // ruleid: unsafe-usage
-let pid = unsafe { libc::getpid() as u32 };
+// This will not compile — libc::getpid() is an extern "C" function and requires unsafe
+let pid = libc::getpid() as u32;
 ```
 
-**Correct: Rust - use safe alternatives**
+**Correct — Option A (Rust - use safe standard library alternative, preferred):**
 
 ```rust
 // ok: unsafe-usage
-let pid = libc::getpid() as u32;
+// std::process::id() is a safe wrapper that returns the OS-assigned PID
+let pid: u32 = std::process::id();
+```
+
+**Correct — Option B (Rust - minimally scoped unsafe block with SAFETY comment):**
+
+```rust
+// ok: unsafe-usage
+// SAFETY: libc::getpid() is a read-only syscall with no preconditions
+let pid = unsafe { libc::getpid() } as u32;
 ```
 
 **Incorrect: OCaml - unsafe functions skip bounds checks**
@@ -2654,24 +2724,31 @@ AWS infrastructure misconfigurations including public S3 buckets, unencrypted re
 
 Security best practices for AWS Terraform configurations to prevent common misconfigurations.
 
-**Incorrect:**
+**Incorrect: bucket without server-side encryption**
 
 ```hcl
-resource "aws_s3_bucket_object" "fail" {
-  bucket  = aws_s3_bucket.bucket.bucket
-  key     = "my-object"
-  content = "data"
+resource "aws_s3_bucket" "bucket" {
+  bucket = "my-bucket"
 }
 ```
 
-**Correct:**
+**Correct: bucket-level KMS encryption via aws_s3_bucket_server_side_encryption_configuration**
 
 ```hcl
-resource "aws_s3_bucket_object" "pass" {
-  bucket     = aws_s3_bucket.bucket.bucket
-  key        = "my-object"
-  content    = "data"
-  kms_key_id = aws_kms_key.example.arn
+resource "aws_s3_bucket" "bucket" {
+  bucket = "my-bucket"
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "pass" {
+  bucket = aws_s3_bucket.bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.example.arn
+    }
+    bucket_key_enabled = true
+  }
 }
 ```
 
@@ -2878,7 +2955,7 @@ resource "azurerm_storage_account" "bad" {
   resource_group_name       = azurerm_resource_group.example.name
   location                  = azurerm_resource_group.example.location
   min_tls_version           = "TLS1_0"
-  enable_https_traffic_only = false
+  allow_nested_items_to_be_public = true
 }
 
 resource "azurerm_storage_container" "bad" {
@@ -2896,7 +2973,7 @@ resource "azurerm_storage_account" "good" {
   resource_group_name       = azurerm_resource_group.example.name
   location                  = azurerm_resource_group.example.location
   min_tls_version           = "TLS1_2"
-  enable_https_traffic_only = true
+  allow_nested_items_to_be_public = false
   network_rules {
     default_action             = "Deny"
     ip_rules                   = ["100.0.0.1"]
@@ -2915,15 +2992,15 @@ resource "azurerm_storage_container" "good" {
 **Incorrect:**
 
 ```hcl
-resource "azurerm_app_service" "bad" {
-  name                     = "example-app-service"
-  location                 = azurerm_resource_group.example.location
-  resource_group_name      = azurerm_resource_group.example.name
-  app_service_plan_id      = azurerm_app_service_plan.example.id
-  https_only               = false
-  remote_debugging_enabled = true
+resource "azurerm_linux_web_app" "bad" {
+  name                = "example-app-service"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  service_plan_id     = azurerm_service_plan.example.id
+  https_only          = false
   site_config {
-    min_tls_version = "1.0"
+    remote_debugging_enabled = true
+    minimum_tls_version      = "1.0"
     cors { allowed_origins = ["*"] }
   }
   auth_settings { enabled = false }
@@ -2933,15 +3010,15 @@ resource "azurerm_app_service" "bad" {
 **Correct:**
 
 ```hcl
-resource "azurerm_app_service" "good" {
-  name                     = "example-app-service"
-  location                 = azurerm_resource_group.example.location
-  resource_group_name      = azurerm_resource_group.example.name
-  app_service_plan_id      = azurerm_app_service_plan.example.id
-  https_only               = true
-  remote_debugging_enabled = false
+resource "azurerm_linux_web_app" "good" {
+  name                = "example-app-service"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  service_plan_id     = azurerm_service_plan.example.id
+  https_only          = true
   site_config {
-    min_tls_version = "1.2"
+    remote_debugging_enabled = false
+    minimum_tls_version      = "1.2"
     cors { allowed_origins = ["https://example.com"] }
   }
   auth_settings { enabled = true }
@@ -2983,7 +3060,7 @@ resource "azurerm_key_vault_key" "good" {
   key_vault_id    = azurerm_key_vault.example.id
   key_type        = "RSA"
   key_size        = 2048
-  expiration_date = "2025-12-31T00:00:00Z"
+  expiration_date = "2027-12-31T00:00:00Z"
   key_opts        = ["decrypt", "encrypt", "sign", "unwrapKey", "verify", "wrapKey"]
 }
 ```
@@ -3055,9 +3132,8 @@ resource "azurerm_kubernetes_cluster" "good" {
   location                        = azurerm_resource_group.example.location
   resource_group_name             = azurerm_resource_group.example.name
   dns_prefix                      = "exampleaks1"
-  private_cluster_enabled         = true
-  disk_encryption_set_id          = azurerm_disk_encryption_set.example.id
-  api_server_authorized_ip_ranges = ["192.168.0.0/16"]
+  private_cluster_enabled = true
+  disk_encryption_set_id  = azurerm_disk_encryption_set.example.id
   default_node_pool { name = "default"; node_count = 1; vm_size = "Standard_D2_v2" }
   identity { type = "SystemAssigned" }
 }
@@ -3136,7 +3212,7 @@ resource "azurerm_container_group" "good" {
   resource_group_name = azurerm_resource_group.example.name
   ip_address_type     = "private"
   os_type             = "Linux"
-  network_profile_id  = azurerm_network_profile.example.id
+  subnet_ids          = [azurerm_subnet.example.id]
   container { name = "hello-world"; image = "microsoft/aci-helloworld:latest"; cpu = "0.5"; memory = "1.5" }
 }
 ```
@@ -3196,7 +3272,7 @@ resource "google_storage_bucket" "insecure" {
   uniform_bucket_level_access = false
 }
 resource "google_storage_bucket_iam_member" "public" {
-  bucket = google_storage_bucket.default.name
+  bucket = google_storage_bucket.insecure.name
   role   = "roles/storage.admin"
   member = "allUsers"
 }
@@ -3213,7 +3289,7 @@ resource "google_storage_bucket" "secure" {
   logging { log_bucket = "my-logging-bucket" }
 }
 resource "google_storage_bucket_iam_member" "restricted" {
-  bucket = google_storage_bucket.default.name
+  bucket = google_storage_bucket.secure.name
   role   = "roles/storage.admin"
   member = "user:jane@example.com"
 }
@@ -3229,7 +3305,7 @@ resource "google_compute_instance" "insecure" {
   network_interface { network = "default"; access_config {} }
 }
 resource "google_compute_firewall" "open" {
-  name = "allow-all"; network = "google_compute_network.vpc.name"
+  name = "allow-all"; network = google_compute_network.vpc.name
   allow { protocol = "tcp"; ports = [22, 3389] }
   source_ranges = ["0.0.0.0/0"]
 }
@@ -3247,7 +3323,7 @@ resource "google_compute_instance" "secure" {
   shielded_instance_config { enable_vtpm = true; enable_integrity_monitoring = true }
 }
 resource "google_compute_firewall" "restricted" {
-  name = "allow-ssh"; network = "google_compute_network.vpc.name"
+  name = "allow-ssh"; network = google_compute_network.vpc.name
   allow { protocol = "tcp"; ports = ["22"] }
   source_ranges = ["172.1.2.3/32"]; target_tags = ["ssh"]
 }
@@ -3312,7 +3388,7 @@ resource "google_project_iam_member" "dangerous" {
   member  = "serviceAccount:test-compute@developer.gserviceaccount.com"
 }
 resource "google_compute_subnetwork" "no_logs" {
-  name = "example"; ip_cidr_range = "10.0.0.0/16"; network = "google_compute_network.vpc.id"
+  name = "example"; ip_cidr_range = "10.0.0.0/16"; network = google_compute_network.vpc.id
 }
 resource "google_project" "default_network" {
   name = "My Project"; project_id = "your-project-id"; org_id = "1234567"
@@ -3326,7 +3402,7 @@ resource "google_project_iam_member" "safe" {
   project = "your-project-id"; role = "roles/viewer"; member = "user:jane@example.com"
 }
 resource "google_compute_subnetwork" "with_logs" {
-  name = "example"; ip_cidr_range = "10.0.0.0/16"; network = "google_compute_network.vpc.self_link"
+  name = "example"; ip_cidr_range = "10.0.0.0/16"; network = google_compute_network.vpc.self_link
   log_config { aggregation_interval = "INTERVAL_10_MIN"; flow_sampling = 0.5 }
 }
 resource "google_project" "no_default_network" {
@@ -3616,7 +3692,7 @@ spec:
   volumes:
     - name: docker-sock-volume
       hostPath:
-        type: File
+        type: Socket
         path: /var/run/docker.sock
 ```
 
@@ -3683,7 +3759,7 @@ The last user in the container should not be 'root'. If an attacker gains contro
 **Incorrect:**
 
 ```dockerfile
-FROM busybox
+FROM debian:bookworm
 RUN apt-get update && apt-get install -y some-package
 USER appuser
 USER root
@@ -3692,7 +3768,7 @@ USER root
 **Correct:**
 
 ```dockerfile
-FROM busybox
+FROM debian:bookworm
 USER root
 RUN apt-get update && apt-get install -y some-package
 USER appuser
@@ -3761,7 +3837,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
-**Correct:**
+**Correct: use a named volume instead of host mounts**
 
 ```yaml
 version: "3.9"
@@ -3769,7 +3845,9 @@ services:
   worker:
     image: my-worker-image:1.0
     volumes:
-      - /tmp/data:/tmp/data
+      - worker-data:/app/data
+volumes:
+  worker-data:
 ```
 
 If unverified user data can reach the run or create method, it can result in running arbitrary containers.
@@ -4090,7 +4168,7 @@ close_out oc
 **Incorrect: vulnerable to race condition**
 
 ```python
-import tempfile as tf
+import tempfile
 
 # ruleid: tempfile-insecure
 x = tempfile.mktemp()
@@ -4101,6 +4179,7 @@ x = tempfile.mktemp(dir="/tmp")
 **Correct: use secure alternatives**
 
 ```python
+import os
 import tempfile
 
 # Use NamedTemporaryFile which atomically creates and opens the file
@@ -4182,25 +4261,26 @@ func main() {
 }
 ```
 
-**Correct: use TempFile for atomic creation**
+**Correct: use os.CreateTemp for atomic creation**
 
 ```go
 import "os"
 
-func secureTemp() error {
-    // Atomically creates a file with a random suffix
-    f, err := os.CreateTemp("", "prefix-*.txt")
-    if err != nil {
-        return err
-    }
-    defer f.Close()
+func main_good() {
+	// ok:bad-tmp-file-creation
+	f, err := os.CreateTemp("", "my_temp-*.txt")
+	if err != nil {
+		fmt.Println("Error while creating temp file!")
+		return
+	}
+	defer f.Close()
 
-    _, err = f.WriteString("secure data")
-    return err
+	_, err = f.WriteString("secure data")
+	if err != nil {
+		fmt.Println("Error while writing!")
+	}
 }
 ```
-
-Best Practice: Use os.CreateTemp (Go 1.16+) or ioutil.TempFile which atomically creates a new file with a unique name.
 
 **References:**
 
@@ -4264,6 +4344,15 @@ finally:
     break  # Suppresses the exception!
 ```
 
+**CORRECT - Let the exception propagate; use finally only for cleanup:**
+
+```python
+try:
+    raise ValueError()
+finally:
+    cleanup()  # Cleanup runs, exception still propagates
+```
+
 **INCORRECT:**
 
 ```python
@@ -4302,7 +4391,7 @@ return `value is {x}`  // Missing $
 return `value is ${x}`
 ```
 
-Loop variables are shared across iterations.
+Loop variables are shared across iterations (Go < 1.22).
 
 **INCORRECT:**
 
@@ -4332,7 +4421,16 @@ bigValue, _ := strconv.Atoi("2147483648")
 value := int16(bigValue)  // Overflow!
 ```
 
-CORRECT: Use strconv.ParseInt with correct bit size.
+**CORRECT:**
+
+```go
+parsed, err := strconv.ParseInt("2147483648", 10, 32)
+if err != nil {
+    // handles out-of-range and invalid syntax
+    log.Fatal(err)
+}
+value := int32(parsed)
+```
 
 **INCORRECT:**
 
@@ -4369,7 +4467,12 @@ int i = atoi(buf);
 **CORRECT:**
 
 ```c
-long l = strtol(buf, NULL, 10);
+char *endptr;
+errno = 0;
+long l = strtol(buf, &endptr, 10);
+if (errno != 0 || endptr == buf || *endptr != '\0') {
+    // handle conversion error
+}
 ```
 
 Unquoted variables split on whitespace.
@@ -4598,7 +4701,7 @@ total = len(persons.all())
 total = persons.count()
 ```
 
-Rather than adding one element at a time, use batch loading to improve performance. Each individual db.session.add() in a loop can trigger separate database operations.
+Rather than adding one element at a time, use batch loading to improve performance. Looping db.session.add() increases session bookkeeping overhead and can trigger per-iteration SQL if autoflush is enabled (e.g., when a query runs during the loop).
 
 **INCORRECT - Adding one at a time in a loop:**
 
@@ -4642,18 +4745,25 @@ function FunctionalComponent() {
 }
 ```
 
-Check array length efficiently without traversing the entire collection.
+Hoist expensive work (object allocations, RegExp compilation, function creation) out of loops.
 
-**INCORRECT - Inefficient length check:**
+**INCORRECT - RegExp compiled on every iteration:**
 
 ```javascript
-if (items.length === 0) { /* empty */ }
+for (const line of lines) {
+  const match = line.match(new RegExp('\\d{4}-\\d{2}-\\d{2}'));
+  if (match) results.push(match[0]);
+}
 ```
 
-**CORRECT - Direct comparison when possible:**
+**CORRECT - Compile once, reuse in loop:**
 
 ```javascript
-if (!items.length) { /* empty */ }
+const datePattern = /\d{4}-\d{2}-\d{2}/;
+for (const line of lines) {
+  const match = line.match(datePattern);
+  if (match) results.push(match[0]);
+}
 ```
 
 For operations that require iterating, prefer built-in methods that short-circuit:
