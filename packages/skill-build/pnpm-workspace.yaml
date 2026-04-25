@@ -1,0 +1,23 @@
+# Supply-chain defenses, per
+# https://pnpm.io/blog/2025/12/05/newsroom-npm-supply-chain-security
+
+# Block recently published versions so the community has time to catch
+# malicious releases. 7 days. Add entries to minimumReleaseAgeExclude
+# (e.g. `pkg@1.2.3`) for critical hotfixes.
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude: []
+
+# Fail install if any dependency ships a lifecycle script we haven't
+# reviewed. Every entry in onlyBuiltDependencies is a deliberate
+# opt-in; unlisted packages with scripts will refuse to build.
+strictDepBuilds: true
+onlyBuiltDependencies:
+  # tsx ships platform-specific binaries via esbuild's postinstall.
+  - esbuild
+ignoredBuiltDependencies: []
+
+# Refuse to install a version whose publish trust level is weaker than
+# a previously seen version — a common signature of compromised
+# maintainer credentials.
+trustPolicy: no-downgrade
+trustPolicyExclude: []

@@ -19,6 +19,9 @@
     "skills"
   ],
   "license": "MIT",
+  "engines": {
+    "pnpm": ">=10.21.0"
+  },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.0.10",
