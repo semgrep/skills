@@ -32,11 +32,17 @@ When MCP tools aren't available, fall back to the CLI commands below.
 ## Installation (CLI)
 
 ```bash
-# pip (recommended)
-python3 -m pip install semgrep
+# pipx or uv (preferred) - isolated install, works on externally-managed Pythons
+pipx install semgrep
+uv tool install semgrep
 
 # Homebrew
 brew install semgrep
+
+# pip - inside a virtualenv. A bare `python3 -m pip install semgrep` fails with
+# `error: externally-managed-environment` on PEP 668 Pythons, which includes
+# Homebrew Python on macOS and the system Python on Debian 12+ / Ubuntu 24.04+.
+python3 -m venv .venv && source .venv/bin/activate && pip install semgrep
 
 # Docker
 docker run --rm -v "${PWD}:/src" semgrep/semgrep semgrep --config auto /src
